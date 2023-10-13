@@ -1,0 +1,15 @@
+/home/lia/Escritorio/HULK I/Tokenizar/bin/Debug/net7.0/token
+/home/lia/Escritorio/HULK I/Tokenizar/bin/Debug/net7.0/token.deps.json
+/home/lia/Escritorio/HULK I/Tokenizar/bin/Debug/net7.0/token.runtimeconfig.json
+/home/lia/Escritorio/HULK I/Tokenizar/bin/Debug/net7.0/token.dll
+/home/lia/Escritorio/HULK I/Tokenizar/bin/Debug/net7.0/token.pdb
+/home/lia/Escritorio/HULK I/Tokenizar/obj/Debug/net7.0/token.csproj.AssemblyReference.cache
+/home/lia/Escritorio/HULK I/Tokenizar/obj/Debug/net7.0/token.GeneratedMSBuildEditorConfig.editorconfig
+/home/lia/Escritorio/HULK I/Tokenizar/obj/Debug/net7.0/token.AssemblyInfoInputs.cache
+/home/lia/Escritorio/HULK I/Tokenizar/obj/Debug/net7.0/token.AssemblyInfo.cs
+/home/lia/Escritorio/HULK I/Tokenizar/obj/Debug/net7.0/token.csproj.CoreCompileInputs.cache
+/home/lia/Escritorio/HULK I/Tokenizar/obj/Debug/net7.0/token.dll
+/home/lia/Escritorio/HULK I/Tokenizar/obj/Debug/net7.0/refint/token.dll
+/home/lia/Escritorio/HULK I/Tokenizar/obj/Debug/net7.0/token.pdb
+/home/lia/Escritorio/HULK I/Tokenizar/obj/Debug/net7.0/token.genruntimeconfig.cache
+/home/lia/Escritorio/HULK I/Tokenizar/obj/Debug/net7.0/ref/token.dll
