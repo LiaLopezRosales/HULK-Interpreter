@@ -8,5 +8,5 @@ public abstract class Expression:Node
 
     public abstract void Evaluate();
 
-    public enum ExpressionType{Bool,Number,Text,Other}
+    public enum ExpressionType{Bool,Number,Text,Other,Conditional,Let_In}
 }

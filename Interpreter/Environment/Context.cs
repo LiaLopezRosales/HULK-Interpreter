@@ -15,7 +15,7 @@ public class Context
         Trig_functions.Add("sin",(Number argument)=>Math.Sin((double)argument.Value!));
         Trig_functions.Add("cos",(Number argument)=>Math.Cos((double)argument.Value!));
         Trig_functions.Add("sqrt",(Number argument)=>Math.Sqrt((double)argument.Value!));
-        Trig_functions.Add("exp",(Number argument)=>Math.Log((double)argument.Value!));
+        Trig_functions.Add("exp",(Number argument)=>Math.Exp((double)argument.Value!));
         Math_value = new Dictionary<string, Func<double>>();
         Math_value.Add("PI",()=>Math.PI);
         Math_value.Add("E",()=>Math.E);
