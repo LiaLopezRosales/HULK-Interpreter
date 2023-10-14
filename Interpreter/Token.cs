@@ -13,11 +13,4 @@ public  class Token
 
     public override string ToString() => string.Format("{0} [{1}]",Tipo,Value);
     
-        
-    
-
-    
-    // public abstract string Form();
-    // // public abstract double Value();
-    // public abstract int GetPrecedence();
 }

@@ -1,6 +1,6 @@
 public class Context
 {
-    public Dictionary<string,Token[]> Functions{get;set;}
+    public Dictionary<string,List<Token>> Available_Functions{get;set;}
     public Dictionary<string,Dictionary<int,Token>> Functions_Arguments{get;set;}
     public Dictionary<string,Func<Number,double>> Trig_functions{get;}
     public Dictionary<string,Func<double>> Math_value{get;}
@@ -9,7 +9,7 @@ public class Context
 
     public Context()
     {
-        Functions=new Dictionary<string, Token[]>();
+        Available_Functions=new Dictionary<string,List<Token>>();
         Functions_Arguments=new Dictionary<string,Dictionary<int,Token>>();
         Trig_functions = new Dictionary<string, Func<Number,double>>();
         Trig_functions.Add("sin",(Number argument)=>Math.Sin((double)argument.Value!));
@@ -39,7 +39,7 @@ public class Context
 
     }
 
-    public void AddFunction(string name,Token[] code)
+    public void AddFunction(string name,List<Token> code)
     {
         Functions.Add(name,code);
     }

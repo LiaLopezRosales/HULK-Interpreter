@@ -1,15 +1,15 @@
 using System.Collections;
 public class TokenStream:IEnumerable<Token>
 {
-    public Token[] tokens{get;}
+    public List<Token> tokens{get;}
     int position;
-    int start;
-    int end;
-    public TokenStream(Token[]tokens,int initial,int final)
+    // public int start{get;}
+    // public int end{get;}
+    public TokenStream(List<Token>tokens)
     {
        this.tokens=tokens;
-       start=initial;
-       end=final;
+    //    start=initial;
+    //    end=final;
        position=0;
     }
 
@@ -20,7 +20,7 @@ public class TokenStream:IEnumerable<Token>
 
     public bool End()
     {
-        if (position==end)
+        if (position==tokens.Count-1)
         {
             return true;
         }
@@ -29,7 +29,7 @@ public class TokenStream:IEnumerable<Token>
 
     public void MoveForward(int i)
     {
-        if ( position+i <= end)
+        if ( position+i <=tokens.Count-1)
         {
             position+=i;
         }
@@ -38,14 +38,14 @@ public class TokenStream:IEnumerable<Token>
 
     public void MoveBackward(int i)
     {
-        if ( position-i >= start)
+        if ( position-i >= tokens.Count-1)
         {
             position-=i;
         }
     }
     public void MoveTo(int i)
     {
-        if (i>=start&&i<=end)
+        if (i>=0&&i<=tokens.Count-1)
         {
             position=i;
         }
@@ -54,16 +54,16 @@ public class TokenStream:IEnumerable<Token>
 
     public bool Next()
     {
-        if (position<end)
+        if (position<tokens.Count-1)
         {
             position++;
         }
-        return position<end;
+        return position<tokens.Count-1;
     }
     
      public bool Next(Token.Type type)
     {
-        if (position<end&& LookAhead(1).Tipo==type)
+        if (position<tokens.Count-1&& LookAhead(1).Tipo==type)
         {
             position++;
             return true;
@@ -85,12 +85,12 @@ public class TokenStream:IEnumerable<Token>
     }
     public bool CanLookAhead(int k=0)
     {
-        return end+1-position>k;
+        return tokens.Count-position>k;
     }
 
     public bool Next(string value)
     {
-        if (position<end && LookAhead(1).Value==value)
+        if (position<tokens.Count-1 && LookAhead(1).Value==value)
         {
             position++;
             return true;
@@ -99,7 +99,7 @@ public class TokenStream:IEnumerable<Token>
     }
     public IEnumerator<Token> GetEnumerator()
     {
-        for (int i = position; i < end; i++)
+        for (int i = position; i < tokens.Count; i++)
         {
             yield return tokens[i];
         }

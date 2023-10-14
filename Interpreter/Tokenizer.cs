@@ -3,7 +3,7 @@ using System.Globalization;
 public class Tokenizer
 {
 
-    public static Token[] Tokens(string code)
+    public static List<Token> Tokens(string code)
     {
         //|{patronNumeros}
         // string patronNumeros = @"\d+(\.\d+)?";
@@ -18,16 +18,14 @@ public class Tokenizer
         string patronIdentificador = @"\b\w*[a-zA-Z]\w*\b";
         string patron = $"{patronTexto}|{quotes}|{patronIdentificador}|{patronNumeroNegativo}|{patronPalabras} ";
         MatchCollection matches = Regex.Matches(code, patron);
-        Token[] possibletokens = new Token[matches.Count + 1];
-        int i = 0;
+        List<Token> possibletokens = new List<Token>();
         foreach (Match match in matches)
         {
             // Console.WriteLine(match.Value);
             Token temporal = IdentifyType(match.Value,lexererrors,ref count);
-            possibletokens[i] = temporal;
-            i++;
+            possibletokens.Add(temporal);
         }
-        possibletokens[possibletokens.Length - 1] = new Token(Token.Type.EOL, "EOL");
+        possibletokens.Add(new Token(Token.Type.EOL, "EOL"));
         if (count!=0)
         {
             if (count>0)
@@ -38,14 +36,21 @@ public class Tokenizer
                     count--;
                 }
             }
-            // lexererrors.Add(new Error(Error.ErrorCode.Expected, "')' symbol after '(', equal number of '(' and ')' needed"));
+        }
+        if (possibletokens.Count>2)
+        {
+            Token validexpression = possibletokens[possibletokens.Count-2];
+            if (validexpression.Value!=";")
+            {
+                lexererrors.Add(new Error(Error.TypeError.Lexical_Error,Error.ErrorCode.Expected,";"));
+            }  
+
+        }
+        else
+        {
+            lexererrors.Add(new Error(Error.TypeError.Lexical_Error,Error.ErrorCode.Invalid,"expression"));
         }
         
-        if (possibletokens[possibletokens.Length - 2].Value != ";")
-        {
-            //Console.WriteLine("!Error Sintáctico! : Falta (;) al final de la expresión");
-            lexererrors.Add(new Error(Error.TypeError.Lexical_Error,Error.ErrorCode.Expected,";"));
-        }
         if (lexererrors.Count>0)
         {
             foreach (var error in lexererrors)

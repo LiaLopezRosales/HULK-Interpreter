@@ -1,11 +1,12 @@
 public class Scope
 {
     public Scope? Parent{get;set;}
-    public Dictionary<Token,Token[]> Variables{get;set;}
+    public Dictionary<string,object> Variables{get;set;}
 
     public Scope()
     {
-        Variables=new Dictionary<Token, Token[]>();
+        Variables=new Dictionary<string, object>();
+        this.Parent=null;
     }
 
     public Scope Child()

@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/lia/Escritorio/HULK I/Tokenizar/token.csproj",
+      "projectUniqueName": "/home/lia/Escritorio/HULK I/HULK-Interpreter/Interpreter/token.csproj",
       "projectName": "token",
-      "projectPath": "/home/lia/Escritorio/HULK I/Tokenizar/token.csproj",
+      "projectPath": "/home/lia/Escritorio/HULK I/HULK-Interpreter/Interpreter/token.csproj",
       "packagesPath": "/home/lia/.nuget/packages/",
-      "outputPath": "/home/lia/Escritorio/HULK I/Tokenizar/obj/",
+      "outputPath": "/home/lia/Escritorio/HULK I/HULK-Interpreter/Interpreter/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/lia/.nuget/NuGet/NuGet.Config"

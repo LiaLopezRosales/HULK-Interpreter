@@ -1,12 +1,13 @@
-public class Parser
+public class Parser1
 {
     public TokenStream tokenstream {get;private set;}
     //public enum TypeExpression{Let_argument,In,Condition,If,Else,Function_Argument,Numerical,Boolean,Textual,Expression,Math,Bool,Conc}
 
-    public Parser(TokenStream stream)
+    public Parser1(TokenStream stream)
     {
         this.tokenstream=stream;
     }
+    Scope firstscope = new Scope();
     object result="";
     Context context=new Context();
     public object? ParseProgram(List<Error> errors)
@@ -87,31 +88,157 @@ public class Parser
             }
                
         }
-        else ParseExpression(errors,context,result,tokenstream);
+        else return ParseExpression(errors,context,result,tokenstream,firstscope);
 
     }
     
+    private Expression? ParseConditional(TokenStream stream2,List<Error>errors,Scope scope)
 
-   private Expression? ParseLet_In(TokenStream stream1,List<Error>errors)
+   private Expression? ParseLet_In(TokenStream stream1,List<Error>errors,Scope scope)
    {
+    string name="";
      if (stream1.LookAhead(1).Tipo!=Token.Type.identifier)
      {
         errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"some identifier"));
      }
+     else{name=stream1.tokens[stream1.Position()].Value;}
      
      if (stream1.LookAhead(1).Value!="=")
      {
         errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"some identifier"));
      }
+
+     Expression? variable = new Text("");
+     Scope in_variables=scope.Child(scope);
      
      if (stream1.LookAhead(1).Value=="(")
      {
         int end = End_of_Expression(stream1.Position(),stream1);
-        Assig = ParseExpression(new TokenStream(stream1.tokens,stream1.Position(),end));
+         variable = ParseExpression(new TokenStream(stream1.tokens,stream1.Position(),end));
+        if(variable==null)
+        {
+            errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Expected,"return value"));
+        }
+        else 
+        {
+            
+            in_variables.Variables.Add(name,variable);
+        }
      }
      else
+     {
+        int start=stream1.Position();
+        int end=stream1.end;
+        for (int i = start; i < stream1.end; i++)
+        {
+            if (stream1.tokens[i].Value==","||stream1.tokens[i].Value=="in")
+            {
+                end=i;
+            }
+            if (stream1.tokens[i].Value!="in"&&i==stream1.end-1)
+            {
+                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"in expression"));
+                end=-1;
+            }
+        }
+        if (end==-1)
+        {
+            return null;
+        }
+        else
+        {
+            variable = ParseExpression(new TokenStream(stream1.tokens,stream1.Position(),end-1));
+            if(variable==null)
+        {
+            errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Expected,"return value"));
+        }
+        else 
+        {
+           
+            in_variables.Variables.Add(name,variable);
+        }
+        } 
+     }
+     string lastvalue=stream1.tokens[stream1.Position()].Value;
+     while (lastvalue==",")
+     {
+        if (stream1.LookAhead(1).Tipo!=Token.Type.identifier)
+     {
+        errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"some identifier"));
+     }
+     else{name=stream1.tokens[stream1.Position()].Value;}
+     
+     if (stream1.LookAhead(1).Value!="=")
+     {
+        errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"some identifier"));
+     }
+
+     if (stream1.LookAhead(1).Value=="(")
+     {
+        int end = End_of_Expression(stream1.Position(),stream1);
+         variable = ParseExpression(new TokenStream(stream1.tokens,stream1.Position(),end));
+        if(variable==null)
+        {
+            errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Expected,"return value"));
+        }
+        else 
+        {
+            
+            in_variables.Variables.Add(name,variable);
+        }
+        stream1.MoveTo(end);
+        lastvalue=stream1.tokens[stream1.Position()].Value;
+     }
+     else
+     {
+        int start=stream1.Position();
+        int end=stream1.end;
+        for (int i = start; i < stream1.end; i++)
+        {
+            if (stream1.tokens[i].Value==","||stream1.tokens[i].Value=="in")
+            {
+                end=i;
+            }
+            if (stream1.tokens[i].Value!="in"&&i==stream1.end-1)
+            {
+                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"in expression"));
+                end=-1;
+            }
+        }
+        if (end==-1)
+        {
+            return null;
+        }
+        else
+        {
+            variable = ParseExpression(new TokenStream(stream1.tokens,stream1.Position(),end-1),scope);
+            if(variable==null)
+        {
+            errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Expected,"return value"));
+        }
+        else 
+        {
+           
+            in_variables.Variables.Add(name,variable);
+        }
+        } 
+        lastvalue=stream1.tokens[stream1.Position()].Value;
+     }
+     }
+     if(lastvalue!="in")
+     {
+        return null;
+     }
+     else
+     {
+        stream1.MoveForward(1);
+        return ParseExpression(new TokenStream(stream1.tokens,stream1.Position(),stream1.end),in_variables);
+
+     }
+
      
    }
+   
     public int End_of_Expression(int i,TokenStream tokenstream)
     {
         int end=i;
@@ -163,6 +290,7 @@ public class Parser
     }
     public Expression? ParseMathExpression(TokenStream tokenstream)
     {
+        tokenstream.MoveForward(1);
         return ParseMathExpressionLv1(tokenstream);
     }
     private Expression? ParseMathExpressionLv1(TokenStream tokenstream) 
@@ -193,7 +321,7 @@ public class Parser
      private Expression? ParseMathExpressionLv2(TokenStream tokenstream) 
      { 
          Expression? newLeft = ParseMathExpressionLv3(tokenstream); 
-         return ParseMathExpressionLv2(tokenstream); 
+         return ParseMathExpressionLv2_(newLeft,tokenstream); 
      } 
   
      private Expression? ParseMathExpressionLv2_(Expression? left,TokenStream tokenstream) 
@@ -206,11 +334,18 @@ public class Parser
             if (!tokenstream.Next(Token.Type.right_bracket))return null;
         }
          Expression? exp = ParseMul(left,tokenstream); 
-         if(exp != null) return exp; 
+         if(exp != null) 
+         {
+            Console.WriteLine("338");
+            return exp; 
+         }
   
          exp = ParseDiv(left,tokenstream); 
-         if(exp != null) return exp; 
-  
+         if(exp != null) 
+         { Console.WriteLine("344");
+            return exp; 
+         }
+         Console.WriteLine(left.ToString());
          return left; 
      } 
      private Expression? ParseMathExpressionLv3(TokenStream tokenstream) 
@@ -371,7 +506,8 @@ public class Parser
         if (tokenstream.Next(Token.Type.left_bracket))
         {
             int end = End_of_Expression(tokenstream.Position(),tokenstream);
-            left = ParseExpression(new TokenStream(tokenstream.tokens,tokenstream.Position(),end));
+            //Chance this back
+            left = ParseMathExpression(new TokenStream(tokenstream.tokens,tokenstream.Position(),end));
             if (left==null) return null;
             if (!tokenstream.Next(Token.Type.right_bracket))return null;
         }
@@ -543,7 +679,7 @@ public class Parser
         if (tokenstream.Next(Token.Type.left_bracket))
         {
             int end = End_of_Expression(tokenstream.Position(),tokenstream);
-            left = ParseExpression(new TokenStream(tokenstream.tokens,tokenstream.Position(),end));
+            //left = ParseExpression(new TokenStream(tokenstream.tokens,tokenstream.Position(),end));
             if (left==null) return null;
             if (!tokenstream.Next(Token.Type.right_bracket))return null;
         }

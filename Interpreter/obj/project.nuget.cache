@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "xhRdr+DIU1uBwF4vi0EN7ZCNPUtN+RcihzQ1TVbnK5rdPTPvABNHoaV2Ng9g7sPCzbTO2ud7Nqu4KWCcgE3xfQ==",
+  "dgSpecHash": "t8QOf2zCpXVGgPKiqF3BmpF3OziA37z9IKLAE5rU/ZOrf/7Go59b1IgwRcyjJzSX5CH42ItGuU5bHl7K/xDvpg==",
   "success": true,
-  "projectFilePath": "/home/lia/Escritorio/HULK I/Tokenizar/token.csproj",
+  "projectFilePath": "/home/lia/Escritorio/HULK I/HULK-Interpreter/Interpreter/token.csproj",
   "expectedPackageFiles": [],
   "logs": []
 }
