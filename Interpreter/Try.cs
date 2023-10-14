@@ -1,12 +1,4 @@
-﻿/*
-    Este es el proyecto destinado a la 6ta clase práctica de programación. 
-    La orientación de cada ejercicio puede encontrarla en el pdf adjunto.
-
-    A la hora de entregar la cp, renombre el archivo Solution.cs con el formato:    <------ OJO aquí
-    CP3-Nombre_Apellido1_Apellido2-grupo.cs
-    Sólo debe entregar ese archivo renombrado, no el proyecto completo.
-*/
-
+﻿
 
 string codigo = "55+4;";
 //string codigo = "5+3*6;";
