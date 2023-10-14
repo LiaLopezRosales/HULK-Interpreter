@@ -2,11 +2,15 @@ using System.Text.RegularExpressions;
 using System.Globalization;
 public class Tokenizer
 {
+    public List<Error> lexererrors;
 
-    public static List<Token> Tokens(string code)
+    public Tokenizer()
+    {
+        lexererrors = new List<Error>();
+    }
+    public List<Token> Tokens(string code)
     {
         
-        List<Error> lexererrors = new List<Error>();
         string patronNumeroNegativo = @"-?\d+(\.\d+)?";
         string patronTexto = "\".*?\"";
         string quotes ="\"";
@@ -35,14 +39,19 @@ public class Tokenizer
             lexererrors.Add(new Error(Error.TypeError.Lexical_Error,Error.ErrorCode.Invalid,"expression"));
         }
         
-        if (lexererrors.Count>0)
-        {
-            foreach (var error in lexererrors)
-            {
-                Console.WriteLine(error.ToString());
-            }
-        }
+        // if (lexererrors.Count>0)
+        // {
+        //     foreach (var error in lexererrors)
+        //     {
+        //         Console.WriteLine(error.ToString());
+        //     }
+        // }
         return possibletokens;
+    }
+
+    public List<Error> Lexic_Errors()
+    {
+        return lexererrors;
     }
 
     //Agregar para sacar tokens sqrt,exp,rand

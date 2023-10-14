@@ -1,21 +1,21 @@
 public class Context
 {
-    public Dictionary<string,List<Token>> Available_Functions{get;set;}
-    public Dictionary<string,Dictionary<int,Token>> Functions_Arguments{get;set;}
-    public Dictionary<string,Func<Number,double>> Trig_functions{get;}
+    public List<Fuction> Available_Functions{get;set;}
+    //public Dictionary<string,Dictionary<int,Token>> Functions_Arguments{get;set;}
+    public Dictionary<string,Func<double,double>> Trig_functions{get;}
     public Dictionary<string,Func<double>> Math_value{get;}
     public Dictionary<string,Func<double,double,double>> Log{get;}
     public Dictionary<string,Func<object,object>> Print{get;}
 
     public Context()
     {
-        Available_Functions=new Dictionary<string,List<Token>>();
-        Functions_Arguments=new Dictionary<string,Dictionary<int,Token>>();
-        Trig_functions = new Dictionary<string, Func<Number,double>>();
-        Trig_functions.Add("sin",(Number argument)=>Math.Sin((double)argument.Value!));
-        Trig_functions.Add("cos",(Number argument)=>Math.Cos((double)argument.Value!));
-        Trig_functions.Add("sqrt",(Number argument)=>Math.Sqrt((double)argument.Value!));
-        Trig_functions.Add("exp",(Number argument)=>Math.Exp((double)argument.Value!));
+        Available_Functions=new List<Fuction>();
+        //Functions_Arguments=new Dictionary<string,Dictionary<int,Token>>();
+        Trig_functions = new Dictionary<string, Func<double,double>>();
+        Trig_functions.Add("sin",(double argument)=>Math.Sin(argument));
+        Trig_functions.Add("cos",(double argument)=>Math.Cos(argument));
+        Trig_functions.Add("sqrt",(double argument)=>Math.Sqrt(argument));
+        Trig_functions.Add("exp",(double argument)=>Math.Exp(argument));
         Math_value = new Dictionary<string, Func<double>>();
         Math_value.Add("PI",()=>Math.PI);
         Math_value.Add("E",()=>Math.E);
@@ -39,8 +39,8 @@ public class Context
 
     }
 
-    public void AddFunction(string name,List<Token> code)
-    {
-        Functions.Add(name,code);
-    }
+    // public void AddFunction(string name,Node code)
+    // {
+    //     Available_Functions.Add(name,code);
+    // }
 }

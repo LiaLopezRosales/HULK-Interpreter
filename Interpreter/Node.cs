@@ -13,4 +13,5 @@ public class Node
     //   return 
     // }
     public enum NodeType{Assignations,VarName,Let_exp,Print,Conditional,IF,Else,FucName,Declared_FucName,Declared_Fuc,ParName,Var,parameters,Fuction,Concat,And,Or,Minor,Major,Equal_Minor,Equal_Major,Equal,Diferent,Sum,Sub,Mul,Div,Pow,No,Number,True,False,Text,Cos,Sin,Log,Sqrt,Exp,Rand,PI,E};
+    
 }

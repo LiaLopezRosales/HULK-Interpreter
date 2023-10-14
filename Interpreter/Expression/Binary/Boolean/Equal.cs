@@ -6,17 +6,19 @@ public class Equal:Binary
     public override ExpressionType Type { get => Type=ExpressionType.Bool; set => Type=ExpressionType.Bool; }
 
     public override object? Value { get => base.Value; set => base.Value = value; }
-    public override void Evaluate()
+    public override void Evaluate(object left,object right)
     {
-        Right!.Evaluate();
-        Left!.Evaluate();
-        if (Right.Type==ExpressionType.Number&&Left.Type==ExpressionType.Number)
+        if (left is double && right is double)
         {
-            Value = Convert.ToDouble(Right.Value!,CultureInfo.InvariantCulture) == Convert.ToDouble(Left.Value!,CultureInfo.InvariantCulture);
+            Value = Convert.ToDouble(left,CultureInfo.InvariantCulture) == Convert.ToDouble(right,CultureInfo.InvariantCulture);
         }
-        if(Right.Type==ExpressionType.Text&&Left.Type==ExpressionType.Text)
+        if(left is string && right is string)
         {
-            Value = Right.Value! == Left.Value!;
+            Value = left == right;
+        }
+        if (left is bool && right is bool)
+        {
+            Value = left==right;
         }
          
     }

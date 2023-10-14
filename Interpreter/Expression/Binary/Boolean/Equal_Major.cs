@@ -6,11 +6,9 @@ public class Equal_Major:Binary
     public override ExpressionType Type { get => Type=ExpressionType.Bool; set => Type=ExpressionType.Bool; }
 
     public override object? Value { get => base.Value; set => base.Value = value; }
-    public override void Evaluate()
+    public override void Evaluate(object left,object right)
     {
-        Right!.Evaluate();
-        Left!.Evaluate();
-         Value = Convert.ToDouble(Right.Value!,CultureInfo.InvariantCulture) >= Convert.ToDouble(Left.Value!,CultureInfo.InvariantCulture);
+         Value = Convert.ToDouble(left,CultureInfo.InvariantCulture) >= Convert.ToDouble(right,CultureInfo.InvariantCulture);
     }
     public override string ToString()
     {
