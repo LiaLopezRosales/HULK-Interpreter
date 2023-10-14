@@ -18,8 +18,8 @@ string codigo = "55+4;";
 // {
 //     Console.WriteLine(possibletokens[j].ToString());
 // }
-Parser pars=new Parser(new TokenStream(possibletokens,0,possibletokens.Count-1));
-Expression ? v = pars.ParseMathExpression(pars.tokenstream);
-v.Evaluate();
-Console.WriteLine(v.Value);
+//Parser pars=new Parser(new TokenStream(possibletokens,0,possibletokens.Count-1));
+//Expression ? v = pars.ParseMathExpression(pars.tokenstream);
+// v.Evaluate();
+// Console.WriteLine(v.Value);
   

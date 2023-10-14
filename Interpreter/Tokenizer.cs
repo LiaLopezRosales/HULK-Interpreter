@@ -5,38 +5,22 @@ public class Tokenizer
 
     public static List<Token> Tokens(string code)
     {
-        //|{patronNumeros}
-        // string patronNumeros = @"\d+(\.\d+)?";
-        //Hacer la lista de errores argumento de entrada
-        int count = 0;
+        
         List<Error> lexererrors = new List<Error>();
         string patronNumeroNegativo = @"-?\d+(\.\d+)?";
         string patronTexto = "\".*?\"";
         string quotes ="\"";
         string patronPalabras = @"\+|\-|\*|(\<\=)|(\>\=)|(\=\=)|(\=\>)|(\|\|)|(\&\&)|\/|\^|\@|\,|\(|\)|\{|\}|\<|\>|\=|\;|\:";
-        //string patronIdentificador = @"\b[a-zA-Z0-9][a-zA-Z0-9_]*\b";
         string patronIdentificador = @"\b\w*[a-zA-Z]\w*\b";
         string patron = $"{patronTexto}|{quotes}|{patronIdentificador}|{patronNumeroNegativo}|{patronPalabras} ";
         MatchCollection matches = Regex.Matches(code, patron);
         List<Token> possibletokens = new List<Token>();
         foreach (Match match in matches)
         {
-            // Console.WriteLine(match.Value);
-            Token temporal = IdentifyType(match.Value,lexererrors,ref count);
+            Token temporal = IdentifyType(match.Value,lexererrors);
             possibletokens.Add(temporal);
         }
         possibletokens.Add(new Token(Token.Type.EOL, "EOL"));
-        if (count!=0)
-        {
-            if (count>0)
-            {
-                while (count>0)
-                {
-                    lexererrors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Expected, "')' symbol after '('"));
-                    count--;
-                }
-            }
-        }
         if (possibletokens.Count>2)
         {
             Token validexpression = possibletokens[possibletokens.Count-2];
@@ -62,10 +46,9 @@ public class Tokenizer
     }
 
     //Agregar para sacar tokens sqrt,exp,rand
-    public static Token IdentifyType(string possibletoken,List<Error> errors, ref int count)
+    public static Token IdentifyType(string possibletoken,List<Error> errors)
     {
         Token token=new Token(Token.Type.not_id,possibletoken);
-        //  token.Value = possibletoken;
         if (possibletoken == "print" )
         {
             token = new Token(Token.Type.print,possibletoken);
@@ -154,20 +137,10 @@ public class Tokenizer
         else if (possibletoken=="(")
         {
             token = new Token(Token.Type.left_bracket,possibletoken);
-            count+=1;
-            
-            //return token;
         }
         else if (possibletoken==")")
         {
             token = new Token(Token.Type.right_bracket,possibletoken);
-            count-=1;
-            
-            if (count<0)
-            {
-                errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Expected,"'(' symbol before ')'" ));
-            }
-            //return token;
         }
         else if (possibletoken == "@")
         {
