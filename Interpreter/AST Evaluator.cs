@@ -21,7 +21,14 @@ public class AST_Evaluator
 
      public void StartEvaluation(Node node)
      {
-      GeneralEvaluation(node);
+      if (node.Type==Node.NodeType.Print)
+      {
+         Console.WriteLine(GeneralEvaluation(node.Branches[0]));
+      }
+      else
+      { 
+         Console.WriteLine(GeneralEvaluation(node));
+      }
      }
 
      public object GeneralEvaluation(Node node)
@@ -286,7 +293,7 @@ public class AST_Evaluator
          return Conditional.Value!;
       }
       
-     return null;
+     return 0;
      }
 
 }
