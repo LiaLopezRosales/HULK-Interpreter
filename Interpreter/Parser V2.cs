@@ -53,10 +53,10 @@ public class Parser
          errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'(' symbol {1}"));
        }
        else tokenstream.MoveForward(1);
-       Console.WriteLine(tokenstream.Position());
+       //Console.WriteLine(tokenstream.Position());
        Node argument=ParseExpression();
-       tokenstream.MoveForward(1);
-       Console.WriteLine(tokenstream.Position());
+       //tokenstream.MoveForward(1);
+       //Console.WriteLine(tokenstream.Position());
        Console.WriteLine(tokenstream.tokens[tokenstream.Position()].Value);
        if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.right_bracket)
        {
@@ -72,7 +72,7 @@ public class Parser
     public Node IF_ElSE()
     {
         tokenstream.MoveForward(1);
-        tokenstream.MoveForward(1);
+        //tokenstream.MoveForward(1);
        if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.left_bracket)
        {
          errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'(' symbol {3}"));
@@ -150,6 +150,7 @@ public class Parser
         function.Branches=new List<Node>{name,param,body};
         return function;
     }
+    //Not working
     public Node Let_In()
     {
         Console.WriteLine("sick");
@@ -165,7 +166,7 @@ public class Parser
                 tokenstream.MoveForward(1);
             }
             existcomm=true;
-            if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.identifier || (tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.identifier && tokenstream.tokens[tokenstream.Position()+1].Tipo==Token.Type.left_bracket))
+            if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.identifier || ((tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.identifier && tokenstream.tokens[tokenstream.Position()+1].Tipo==Token.Type.left_bracket)))
             {
                 errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"variable identifier"));
             }
@@ -207,7 +208,6 @@ public class Parser
 
     public Node Unit()
     {
-        Console.WriteLine("in unit");
         if (tokenstream.Position()>=tokenstream.tokens.Count)
         {
             errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"more tokens,end of expression"));
@@ -230,8 +230,6 @@ public class Parser
 
         if (tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.number)
         {
-            //Check this one
-            Console.WriteLine("numberr");
             double value = (Convert.ToDouble(tokenstream.tokens[tokenstream.Position()].Value,CultureInfo.InvariantCulture));
             Node temp=new Node();
             temp.Type=Node.NodeType.Number;
@@ -286,7 +284,7 @@ public class Parser
         {
             if (tokenstream.tokens[tokenstream.Position()].Value=="false")
             {
-               bool value = (Convert.ToBoolean(tokenstream.tokens[tokenstream.Position()+1].Value));
+               bool value = (Convert.ToBoolean(tokenstream.tokens[tokenstream.Position()].Value));
                Node temp=new Node();
                temp.Type=Node.NodeType.False;
                temp.NodeExpression=value;
@@ -295,7 +293,7 @@ public class Parser
             }
             else
             {
-                bool value = (Convert.ToBoolean(tokenstream.tokens[tokenstream.Position()+1].Value));
+                bool value = (Convert.ToBoolean(tokenstream.tokens[tokenstream.Position()].Value));
                Node temp=new Node();
                temp.Type=Node.NodeType.True;
                temp.NodeExpression=value;
@@ -449,10 +447,11 @@ public class Parser
                     newvalue.Branches=new List<Node>{namedfunction,parameters};
                     return newvalue;
             }
-            object value =tokenstream.tokens[tokenstream.Position()+1].Value;
+            object value =tokenstream.tokens[tokenstream.Position()].Value;
                 Node final =new Node();
                 final.Type=Node.NodeType.Var;
                 final.NodeExpression=value;
+                tokenstream.MoveForward(1);
                 return final;
         }
         else if (tokenstream.Position()<tokenstream.tokens.Count && tokenstream.tokens[tokenstream.Position()].Value=="let")
@@ -480,7 +479,7 @@ public class Parser
         //tokenstream.MoveForward(1);
         while (tokenstream.Position()<tokenstream.tokens.Count&&tokenstream.tokens[tokenstream.Position()].Value=="^")
         {
-            Console.WriteLine("in pow");
+            
             Token.Type whatkind = tokenstream.tokens[tokenstream.Position()].Tipo;
             tokenstream.MoveForward(1);
             Node right =ParsePower();
@@ -502,10 +501,9 @@ public class Parser
     {
         Node left =ParsePower();
         Node pro=new Node();
-        //tokenstream.MoveForward(1);
         while (tokenstream.Position()<tokenstream.tokens.Count&&(tokenstream.tokens[tokenstream.Position()].Value=="*"||tokenstream.tokens[tokenstream.Position()].Value=="/"))
         {
-            Console.WriteLine("in product");
+            
             Token.Type whatkind = tokenstream.tokens[tokenstream.Position()].Tipo;
             tokenstream.MoveForward(1);
             Node right =ParseMul_O_Div();
@@ -534,13 +532,11 @@ public class Parser
     {
         Node left =ParseMul_O_Div();
         Node sus=new Node();
-        //tokenstream.MoveForward(1);
         while (tokenstream.Position()<tokenstream.tokens.Count&&(tokenstream.tokens[tokenstream.Position()].Value=="+"||tokenstream.tokens[tokenstream.Position()].Value=="-"))
-        {   Console.WriteLine("here");
+        {   
             Token.Type whatkind = tokenstream.tokens[tokenstream.Position()].Tipo;
             tokenstream.MoveForward(1);
             Node right =ParseSum_O_Sub();
-            Console.WriteLine(right.Type+"herrr");
             if (right.NodeExpression is Error)
             {
                 errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Invalid,"expression"));
@@ -557,7 +553,6 @@ public class Parser
         }
         if (sus.Type!=Node.NodeType.Indefined)
         {
-            Console.WriteLine("trr");
             return sus;
         }
         else return left;
@@ -566,9 +561,9 @@ public class Parser
     {
         Node left =ParseSum_O_Sub();
         Node com=new Node();
-        //tokenstream.MoveForward(1);
         while (tokenstream.Position()<tokenstream.tokens.Count&&(tokenstream.tokens[tokenstream.Position()].Value=="<"||tokenstream.tokens[tokenstream.Position()].Value==">"||tokenstream.tokens[tokenstream.Position()].Value==">="||tokenstream.tokens[tokenstream.Position()].Value=="<="||tokenstream.tokens[tokenstream.Position()].Value=="=="||tokenstream.tokens[tokenstream.Position()].Value=="!="))
         {
+
             Token.Type whatkind = tokenstream.tokens[tokenstream.Position()].Tipo;
             tokenstream.MoveForward(1);
             Node right =ParseSum_O_Sub();
@@ -609,12 +604,11 @@ public class Parser
     {
         Node left =ParseComparation();
         Node and_or=new Node();
-        //tokenstream.MoveForward(1);
         while (tokenstream.Position()<tokenstream.tokens.Count&&(tokenstream.tokens[tokenstream.Position()].Value=="|"||tokenstream.tokens[tokenstream.Position()].Value=="&"))
         {
+
             Token.Type whatkind = tokenstream.tokens[tokenstream.Position()].Tipo;
             tokenstream.MoveForward(1);
-            //Check here later
             Node right =ParseOr_O_And();
             if (right.NodeExpression is Error)
             {
@@ -634,12 +628,13 @@ public class Parser
         }
         else return left;
     }
+    //Problemas al buscar nodo principal
     public Node ParseOP()
-    {
+    {   //En la parte de numeros tratar de que el nodo principal tenga como subnodos sumas y asi con cada uno de los subnodos sigt hasta que no sea posible 
         Node left =ParseOr_O_And();
         Node exp=new Node();
         while (tokenstream.Position()<tokenstream.tokens.Count&&tokenstream.tokens[tokenstream.Position()].Value=="@")
-        {
+        {   
             Token.Type whatkind = tokenstream.tokens[tokenstream.Position()].Tipo;
             tokenstream.MoveForward(1);
             Node right =ParseOP();

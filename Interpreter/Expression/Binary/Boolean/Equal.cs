@@ -14,11 +14,11 @@ public class Equal:Binary
         }
         if(left is string && right is string)
         {
-            Value = left == right;
+            Value = (left.ToString() == right.ToString());
         }
         if (left is bool && right is bool)
         {
-            Value = left==right;
+            Value = (bool)left==(bool)right;
         }
          
     }

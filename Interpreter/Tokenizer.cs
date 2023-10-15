@@ -14,7 +14,7 @@ public class Tokenizer
         string patronNumeroNegativo = @"-?\d+(\.\d+)?";
         string patronTexto = "\".*?\"";
         string quotes ="\"";
-        string patronPalabras = @"\+|\-|\*|(\<\=)|(\>\=)|(\=\=)|(\=\>)|(\|\|)|(\&\&)|\/|\^|\@|\,|\(|\)|\{|\}|\<|\>|\=|\;|\:";
+        string patronPalabras = @"\+|\-|\*|(\<\=)|(\>\=)|(\=\=)|(\!\=)|(\=\>)|(\|)|(\&)|\/|\^|\@|\,|\(|\)|\{|\}|\<|\>|\=|\;|\:";
         string patronIdentificador = @"\b\w*[a-zA-Z]\w*\b";
         string patron = $"{patronTexto}|{quotes}|{patronIdentificador}|{patronNumeroNegativo}|{patronPalabras} ";
         MatchCollection matches = Regex.Matches(code, patron);
@@ -138,6 +138,11 @@ public class Tokenizer
             token = new Token(Token.Type.conditional, possibletoken);
             //return token;
         }
+        else if (possibletoken == "!=" )
+        {
+            token = new Token(Token.Type.diferent, possibletoken);
+            //return token;
+        }
         else if (possibletoken == "," ||  possibletoken == ";" || possibletoken == ":" || possibletoken == "=>" || possibletoken == "=")
         {
             token = new Token(Token.Type.symbol, possibletoken);
@@ -190,13 +195,7 @@ public class Tokenizer
         {
             token = new Token(Token.Type.And, possibletoken);
             //return token;
-        }
-        else if (possibletoken == "!=" )
-        {
-            token = new Token(Token.Type.diferent, possibletoken);
-            //return token;
-        }
-        
+        } 
         else if (possibletoken == "true" || possibletoken == "false")
         {
             token = new Token(Token.Type.boolean, possibletoken);

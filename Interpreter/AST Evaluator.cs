@@ -1,3 +1,4 @@
+using System.Globalization;
 public class AST_Evaluator
 {
     private Node AST{get;set;}
@@ -30,6 +31,10 @@ public class AST_Evaluator
          Console.WriteLine(GeneralEvaluation(node));
       }
      }
+      public List<Error> Semanti_Errors()
+    {
+        return Semantic_Errors;
+    }
 
      public object GeneralEvaluation(Node node)
      {
@@ -170,7 +175,19 @@ public class AST_Evaluator
          Equal eq =new Equal();
          object left = GeneralEvaluation(node.Branches[0]);
          object right=GeneralEvaluation(node.Branches[1]);
-         if ((left is double && right is string)||!(left is string && right is double)||(left is bool && right is string)||(left is bool && right is double)||(left is double && right is bool)||(left is string && right is bool))
+         if (left is string && right is string)
+         {
+            Console.WriteLine("tttt");
+            eq.Evaluate(left,right);
+         return eq.Value!;
+         }
+         else if (left is bool && right is bool)
+         {
+            Console.WriteLine("trrr");
+            eq.Evaluate(left,right);
+            return eq.Value!;
+         }
+         else if ((left is double && right is string)||!(left is string && right is double)||(left is bool && right is string)||(left is bool && right is double)||(left is double && right is bool)||(left is string && right is bool))
          {
             Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Expected,"equal type of values"));
          }
@@ -182,7 +199,19 @@ public class AST_Evaluator
          Diferent df =new Diferent();
          object left = GeneralEvaluation(node.Branches[0]);
          object right=GeneralEvaluation(node.Branches[1]);
-         if ((left is double && right is string)||!(left is string && right is double)||(left is bool && right is string)||(left is bool && right is double)||(left is double && right is bool)||(left is string && right is bool))
+         if (left is string && right is string)
+         {
+            Console.WriteLine("tttt");
+            df.Evaluate(left,right);
+         return df.Value!;
+         }
+         else if (left is bool && right is bool)
+         {
+            Console.WriteLine("trrr");
+            df.Evaluate(left,right);
+            return df.Value!;
+         }
+         else if ((left is double && right is string)||!(left is string && right is double)||(left is bool && right is string)||(left is bool && right is double)||(left is double && right is bool)||(left is string && right is bool))
          {
             Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Expected,"equal type of values"));
          }
@@ -244,28 +273,31 @@ public class AST_Evaluator
       else if (node.Type==Node.NodeType.Sin)
       {
          object arg = GeneralEvaluation(node.Branches[0]);
-         return context.Trig_functions["sin"]((double)arg);
+         return context.Trig_functions["sin"](Convert.ToDouble(arg,CultureInfo.InvariantCulture));
       }
       else if (node.Type==Node.NodeType.Cos)
       {
          object arg = GeneralEvaluation(node.Branches[0]);
+         // Console.WriteLine(arg.ToString());
+         // Console.WriteLine((double)arg);
+         Console.WriteLine(context.Trig_functions["cos"](Convert.ToDouble(arg,CultureInfo.InvariantCulture)));
          return context.Trig_functions["cos"]((double)arg);
       }
       else if (node.Type==Node.NodeType.Sqrt)
       {
          object arg = GeneralEvaluation(node.Branches[0]);
-         return context.Trig_functions["sqrt"]((double)arg);
+         return context.Trig_functions["sqrt"](Convert.ToDouble(arg,CultureInfo.InvariantCulture));
       }
       else if (node.Type==Node.NodeType.Exp)
       {
          object arg = GeneralEvaluation(node.Branches[0]);
-         return context.Trig_functions["exp"]((double)arg);
+         return context.Trig_functions["exp"](Convert.ToDouble(arg,CultureInfo.InvariantCulture));
       }
       else if (node.Type==Node.NodeType.Log)
       {
          object base_of = GeneralEvaluation(node.Branches[0]);
          object arg = GeneralEvaluation(node.Branches[1]);
-         return context.Log["log"]((double)base_of,(double)arg);
+         return context.Log["log"](Convert.ToDouble(base_of,CultureInfo.InvariantCulture),Convert.ToDouble(arg,CultureInfo.InvariantCulture));
       }
       else if (node.Type==Node.NodeType.Rand)
       {
