@@ -324,6 +324,97 @@ public class AST_Evaluator
          Conditional.Evaluate(condition,if_part,else_part);
          return Conditional.Value!;
       }
+      else if (node.Type==Node.NodeType.Fuction)
+      {
+         Dictionary<string,object> Parameters = new Dictionary<string, object>();
+         Node param=node.Branches[1];
+         string par_name="";
+         for (int i = 0; i < param.Branches.Count; i++)
+         {
+            par_name=(string)param.Branches[i].NodeExpression!;
+            Parameters.Add(par_name,"");
+         }
+         Fuction func=new Fuction(node.Branches[0].NodeExpression!.ToString()!,node.Branches[2],Parameters);
+         bool exist=false;
+         foreach (var function in context.Available_Functions)
+         {
+            if (function.Name==par_name)
+            {
+               exist=true;
+            }
+         }
+         if (exist)
+         {
+            Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Invalid,"function name, already exist a preexistent function with the same name"));
+         }
+         else context.Available_Functions.Add(func);
+         return context.Available_Functions;
+         
+      }
+      else if (node.Type==Node.NodeType.Declared_Fuc)
+      {
+         string dfunc_name = node.Branches[0].NodeExpression!.ToString()!;
+         Node func_parameters=node.Branches[1];
+         bool exist=false;
+         foreach (var function in context.Available_Functions)
+         {
+            if (function.Name==dfunc_name)
+            {
+               exist=true;
+            }
+         }
+         int index=-1;
+         if (exist)
+         {
+           Scope func_scope= scope.Child();
+           
+           for (int i = 0; i < context.Available_Functions.Count; i++)
+           {
+             if (context.Available_Functions[i].Name==dfunc_name)
+             {
+               if (context.Available_Functions[i].Functions_Arguments.Count==func_parameters.Branches.Count)
+               {
+                  foreach (var p_name in scope.Variables.Keys)
+                  {
+                     func_scope.Variables.Add(p_name,scope.Variables[p_name]);
+                  }
+                  int param_number=0;
+                  foreach (var p_name in context.Available_Functions[i].Functions_Arguments.Keys)
+                  {
+                     context.Available_Functions[i].Functions_Arguments[p_name]=func_parameters.Branches[param_number].NodeExpression!;
+                     if (func_scope.Variables.ContainsKey(p_name))
+                     {//Check this
+                        func_scope.Variables[p_name]=GeneralEvaluation((Node)func_parameters.Branches[param_number].NodeExpression!);
+                        param_number++;
+                     }
+                     else
+                     {
+                        func_scope.Variables.Add(p_name,GeneralEvaluation((Node)func_parameters.Branches[param_number].NodeExpression!));
+                        param_number++;
+                     }
+                  }
+                  index=i;
+                  break;
+               }
+               else
+               {
+                  Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Expected,$"{context.Available_Functions[i].Functions_Arguments.Count} parameters but received {func_parameters.Branches.Count}"));
+               }
+             }
+           }
+           
+         }
+         else
+         {
+            Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Invalid,"name,function has not been declared"));
+            index=-1;
+         }
+         object value =GeneralEvaluation(context.Available_Functions[index].Code);
+         return value;
+         
+         
+      }
+      
       
      return 0;
      }
