@@ -21,7 +21,7 @@ public class Context
         Math_value.Add("E",()=>Math.E);
         Math_value.Add("rand",Rand);
         Log = new Dictionary<string, Func<double, double, double>>();
-        Log.Add("log",(double Base,double argument)=> Math.Log(Base,argument));
+        Log.Add("log",(double Base,double argument)=> Math.Log(argument,Base));
         Print = new Dictionary<string, Func<object, object>>();
         //Agregar a Print funcion rand()
         object PrintReturn(object argument)

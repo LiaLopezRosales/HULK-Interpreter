@@ -17,18 +17,27 @@ public class AST_Evaluator
      public void Tree_Reader(Node root)
      {
        AST=root;
-       currentcontext=new List<Scope>();
+       currentcontext=new List<Scope>(){new Scope()};
      }
 
      public void StartEvaluation(Node node)
      {
       if (node.Type==Node.NodeType.Print)
       {
-         Console.WriteLine(GeneralEvaluation(node.Branches[0]));
+         object print=GeneralEvaluation(node.Branches[0]);
+         if (Semantic_Errors.Count>0)
+         {
+            Console.WriteLine(print);
+         }
+         
       }
       else
       { 
-         Console.WriteLine(GeneralEvaluation(node));
+         object result=GeneralEvaluation(node);
+         if (Semantic_Errors.Count>0)
+         {
+            Console.WriteLine(result);
+         }
       }
      }
       public List<Error> Semanti_Errors()
@@ -187,7 +196,13 @@ public class AST_Evaluator
             eq.Evaluate(left,right);
             return eq.Value!;
          }
-         else if ((left is double && right is string)||!(left is string && right is double)||(left is bool && right is string)||(left is bool && right is double)||(left is double && right is bool)||(left is string && right is bool))
+         else if (left is double && right is double)
+         {
+            Console.WriteLine("trrr");
+            eq.Evaluate(left,right);
+            return eq.Value!;
+         }
+         else 
          {
             Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Expected,"equal type of values"));
          }
@@ -211,7 +226,13 @@ public class AST_Evaluator
             df.Evaluate(left,right);
             return df.Value!;
          }
-         else if ((left is double && right is string)||!(left is string && right is double)||(left is bool && right is string)||(left is bool && right is double)||(left is double && right is bool)||(left is string && right is bool))
+         else if (left is double && right is double)
+         {
+            Console.WriteLine("trrr");
+            df.Evaluate(left,right);
+            return df.Value!;
+         }
+         else 
          {
             Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Expected,"equal type of values"));
          }
@@ -367,6 +388,7 @@ public class AST_Evaluator
          if (exist)
          {
            Scope func_scope= scope.Child();
+           currentcontext!.Add(func_scope);
            
            for (int i = 0; i < context.Available_Functions.Count; i++)
            {
@@ -374,22 +396,22 @@ public class AST_Evaluator
              {
                if (context.Available_Functions[i].Functions_Arguments.Count==func_parameters.Branches.Count)
                {
-                  foreach (var p_name in scope.Variables.Keys)
+                  foreach (var p_name in currentcontext[currentcontext.Count-2].Variables.Keys)
                   {
-                     func_scope.Variables.Add(p_name,scope.Variables[p_name]);
+                     currentcontext[currentcontext.Count-1].Variables.Add(p_name,currentcontext[currentcontext.Count-2].Variables[p_name]);
                   }
                   int param_number=0;
                   foreach (var p_name in context.Available_Functions[i].Functions_Arguments.Keys)
                   {
                      context.Available_Functions[i].Functions_Arguments[p_name]=func_parameters.Branches[param_number].NodeExpression!;
-                     if (func_scope.Variables.ContainsKey(p_name))
+                     if (currentcontext[currentcontext.Count-1].Variables.ContainsKey(p_name))
                      {//Check this
-                        func_scope.Variables[p_name]=GeneralEvaluation((Node)func_parameters.Branches[param_number].NodeExpression!);
+                        currentcontext[currentcontext.Count-1].Variables[p_name]=GeneralEvaluation((Node)func_parameters.Branches[param_number].NodeExpression!);
                         param_number++;
                      }
                      else
                      {
-                        func_scope.Variables.Add(p_name,GeneralEvaluation((Node)func_parameters.Branches[param_number].NodeExpression!));
+                        currentcontext[currentcontext.Count-1].Variables.Add(p_name,GeneralEvaluation((Node)func_parameters.Branches[param_number].NodeExpression!));
                         param_number++;
                      }
                   }
@@ -410,13 +432,49 @@ public class AST_Evaluator
             index=-1;
          }
          object value =GeneralEvaluation(context.Available_Functions[index].Code);
+         currentcontext!.Remove(currentcontext[currentcontext.Count-1]);
          return value;
          
          
       }
+      else if (node.Type==Node.NodeType.Assignations)
+      {
+        Scope var_of_let=scope.Child();
+        foreach (var name in currentcontext![currentcontext.Count-1].Variables.Keys)
+        {
+          var_of_let.Variables.Add(name,currentcontext![currentcontext.Count-1].Variables[name]);
+        }
+        foreach (Node branch in node.Branches)
+        {
+         string name=branch.Branches[0].NodeExpression!.ToString()!;
+         object value=GeneralEvaluation(branch.Branches[1]);
+         //Check later if a function with te same name creates conflict
+         if (var_of_let.Variables.ContainsKey(name))
+         {
+            var_of_let.Variables[name]=value;
+         }
+         else
+         {
+            var_of_let.Variables.Add(name,value);
+         }
+        }
+        currentcontext.Add(var_of_let);
+      
+      }
+      else if (node.Type==Node.NodeType.Let_exp)
+      {
+         GeneralEvaluation(node.Branches[0]);
+         object result=GeneralEvaluation(node.Branches[1]);
+         currentcontext!.Remove(currentcontext[currentcontext.Count-1]);
+         return result;
+      }
+      else
+      {
+         Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Unknown,"operation required"));
+      }
       
       
-     return 0;
+     return "end";
      }
 
 }
