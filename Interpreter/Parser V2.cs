@@ -72,7 +72,7 @@ public class Parser
     public Node IF_ElSE()
     {
         tokenstream.MoveForward(1);
-        //tokenstream.MoveForward(1);
+        
        if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.left_bracket)
        {
          errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'(' symbol {3}"));
@@ -153,7 +153,6 @@ public class Parser
     //Not working
     public Node Let_In()
     {
-        Console.WriteLine("sick");
         tokenstream.MoveForward(1);
         Node assignation =new Node();
         assignation.Type=Node.NodeType.Assignations;
@@ -456,7 +455,6 @@ public class Parser
         }
         else if (tokenstream.Position()<tokenstream.tokens.Count && tokenstream.tokens[tokenstream.Position()].Value=="let")
         {
-            Console.WriteLine("tired");
             return Let_In();
         }
         else if(tokenstream.tokens[tokenstream.Position()]==null)
