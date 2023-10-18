@@ -44,7 +44,7 @@ while (true)
         else
         {
             Evaluator.Tree_Reader(AST);
-            Evaluator.StartEvaluation(AST);
+            object result = Evaluator.StartEvaluation(AST);
             List<Error> Semantic = Evaluator.Semanti_Errors();
             if (Semantic.Count > 0)
             {
@@ -55,6 +55,10 @@ while (true)
                 }
                 break;
             }
+            else
+            {
+                Console.WriteLine(result);
+            }
         }
     }
 }
@@ -64,8 +68,9 @@ static void SubNodes(Node node, int i)
     {
         foreach (var subnode in node.Branches)
         {
-            Console.WriteLine($"{subnode.Type} {i}");
-            Console.WriteLine($"{subnode.NodeExpression} {i}");
+            Console.WriteLine($"{subnode.Type} {i} type");
+            Console.WriteLine($"{subnode.NodeExpression} {i} expression");
+            
             SubNodes(subnode, i + 1);
         }
     }

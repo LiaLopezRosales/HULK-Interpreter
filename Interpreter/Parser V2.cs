@@ -416,9 +416,12 @@ public class Parser
         {
             if (tokenstream.tokens[tokenstream.Position()+1].Tipo==Token.Type.left_bracket)
             {
-                string name = tokenstream.tokens[tokenstream.Position()+1].Value;
+                string name = tokenstream.tokens[tokenstream.Position()].Value;
+                tokenstream.MoveForward(1);
                 Node namedfunction=new Node();
                 namedfunction.Type=Node.NodeType.Declared_FucName;
+                namedfunction.NodeExpression=name;
+                tokenstream.MoveForward(1);
                 Node parameters =new Node();
                 parameters.Type=Node.NodeType.parameters;
                 if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.right_bracket)

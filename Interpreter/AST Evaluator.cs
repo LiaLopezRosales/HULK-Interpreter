@@ -20,7 +20,7 @@ public class AST_Evaluator
        currentcontext=new List<Scope>(){new Scope()};
      }
 
-     public void StartEvaluation(Node node)
+     public object StartEvaluation(Node node)
      {
       if (node.Type==Node.NodeType.Print)
       {
@@ -29,6 +29,7 @@ public class AST_Evaluator
          {
             Console.WriteLine(print);
          }
+         return print;
          
       }
       else
@@ -38,6 +39,7 @@ public class AST_Evaluator
          {
             Console.WriteLine(result);
          }
+         return result;
       }
      }
       public List<Error> Semanti_Errors()
@@ -406,35 +408,45 @@ public class AST_Evaluator
                      context.Available_Functions[i].Functions_Arguments[p_name]=func_parameters.Branches[param_number].NodeExpression!;
                      if (currentcontext[currentcontext.Count-1].Variables.ContainsKey(p_name))
                      {//Check this
+                        //Console.WriteLine($"line 409 {func_parameters.Branches[param_number].NodeExpression!}");
                         currentcontext[currentcontext.Count-1].Variables[p_name]=GeneralEvaluation((Node)func_parameters.Branches[param_number].NodeExpression!);
+                        //Console.WriteLine($"line 410 {currentcontext[currentcontext.Count-1].Variables[p_name]}");
                         param_number++;
                      }
                      else
                      {
-                        currentcontext[currentcontext.Count-1].Variables.Add(p_name,GeneralEvaluation((Node)func_parameters.Branches[param_number].NodeExpression!));
+                        //Console.WriteLine($"line 416 {func_parameters.Branches[param_number].NodeExpression}");
+                        object par_value=GeneralEvaluation((Node)func_parameters.Branches[param_number].NodeExpression!);
+                        currentcontext[currentcontext.Count-1].Variables.Add(p_name,par_value);
+                        //Console.WriteLine("returned value");
+                        //Console.WriteLine($"line 420 {par_value}");
                         param_number++;
                      }
+                     //Console.WriteLine($"line 423 {param_number}");
                   }
                   index=i;
-                  break;
+                  //Console.WriteLine($"line 426 {index}");
                }
                else
                {
                   Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Expected,$"{context.Available_Functions[i].Functions_Arguments.Count} parameters but received {func_parameters.Branches.Count}"));
                }
+               //Console.WriteLine($"line 432 ");
              }
+             //Console.WriteLine("line 434");
            }
-           
+           //Console.WriteLine("line 436");
          }
          else
          {
             Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Invalid,"name,function has not been declared"));
             index=-1;
          }
+         //Console.WriteLine("line 443");
          object value =GeneralEvaluation(context.Available_Functions[index].Code);
          currentcontext!.Remove(currentcontext[currentcontext.Count-1]);
+         //Console.WriteLine($"{value}");
          return value;
-         
          
       }
       else if (node.Type==Node.NodeType.Assignations)
