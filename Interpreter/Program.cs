@@ -1,6 +1,7 @@
 ﻿
 //Need to implement something to find most external operator for aritmetic expression
 //string codigo = "let x=16 in log(2,x);";(Test code)
+//Arreglar recursividad
 
 AST_Evaluator Evaluator = new AST_Evaluator();
 string code = "start/";
@@ -29,8 +30,8 @@ while (true)
     {
         Parser parse = new Parser(possibletokens);
         Node AST = parse.Parse();
-        //Console.WriteLine(AST.Type);
-        //SubNodes(AST,0);
+        Console.WriteLine(AST.Type);
+        SubNodes(AST,0);
         List<Error> Syntactic = parse.Syntactic_Errors();
         if (Syntactic.Count > 0)
         {
