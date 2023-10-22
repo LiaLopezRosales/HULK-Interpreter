@@ -24,14 +24,14 @@ while (true)
         {
             Console.WriteLine(error.ToString());
         }
-        break;
+        continue;
     }
     else
     {
         Parser parse = new Parser(possibletokens);
         Node AST = parse.Parse();
-        Console.WriteLine(AST.Type);
-        SubNodes(AST,0);
+        //Console.WriteLine(AST.Type);
+        //SubNodes(AST,0);
         List<Error> Syntactic = parse.Syntactic_Errors();
         if (Syntactic.Count > 0)
         {
@@ -40,7 +40,7 @@ while (true)
             {
                 Console.WriteLine(error.ToString());
             }
-            break;
+            continue;
         }
         else
         {
@@ -54,7 +54,11 @@ while (true)
                 {
                     Console.WriteLine(error.ToString());
                 }
-                break;
+                if (AST.Type==Node.NodeType.Fuction)
+                {
+                    break;
+                }
+                continue;
             }
             else
             {

@@ -399,7 +399,7 @@ public class AST_Evaluator
          int index=-1;
          if (exist)
          {
-            Console.WriteLine("line 389");
+            //Console.WriteLine("line 389");
            Scope func_scope= scope.Child();
            currentcontext!.Add(func_scope);
            
@@ -409,7 +409,7 @@ public class AST_Evaluator
              {
                if (context.Available_Functions[i].Functions_Arguments.Count==func_parameters.Branches.Count)
                {
-                  Console.WriteLine("line 399");
+                  //Console.WriteLine("line 399");
                   foreach (var p_name in currentcontext[currentcontext.Count-2].Variables.Keys)
                   {
                      currentcontext[currentcontext.Count-1].Variables.Add(p_name,currentcontext[currentcontext.Count-2].Variables[p_name]);
@@ -420,44 +420,44 @@ public class AST_Evaluator
                      context.Available_Functions[i].Functions_Arguments[p_name]=func_parameters.Branches[param_number].NodeExpression!;
                      if (currentcontext[currentcontext.Count-1].Variables.ContainsKey(p_name))
                      {//Check this
-                        Console.WriteLine($"line 409 {func_parameters.Branches[param_number].NodeExpression!}");
+                        //Console.WriteLine($"line 409 {func_parameters.Branches[param_number].NodeExpression!}");
                         currentcontext[currentcontext.Count-1].Variables[p_name]=GeneralEvaluation((Node)func_parameters.Branches[param_number].NodeExpression!);
-                        Console.WriteLine($"line 410 {currentcontext[currentcontext.Count-1].Variables[p_name]}");
+                        //Console.WriteLine($"line 410 {currentcontext[currentcontext.Count-1].Variables[p_name]}");
                         param_number++;
                      }
                      else
                      {
-                        Console.WriteLine($"line 416 {func_parameters.Branches[param_number].NodeExpression}");
+                        //Console.WriteLine($"line 416 {func_parameters.Branches[param_number].NodeExpression}");
                         object par_value=GeneralEvaluation((Node)func_parameters.Branches[param_number].NodeExpression!);
                         currentcontext[currentcontext.Count-1].Variables.Add(p_name,par_value);
-                        Console.WriteLine("returned value");
-                        Console.WriteLine($"line 420 {par_value}");
+                        //Console.WriteLine("returned value");
+                        //Console.WriteLine($"line 420 {par_value}");
                         param_number++;
                      }
-                     Console.WriteLine($"line 423 {param_number}");
+                     //Console.WriteLine($"line 423 {param_number}");
                   }
                   index=i;
-                  Console.WriteLine($"line 426 {index}");
+                  //Console.WriteLine($"line 426 {index}");
                }
                else
                {
                   Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Expected,$"{context.Available_Functions[i].Functions_Arguments.Count} parameters but received {func_parameters.Branches.Count}"));
                }
-               Console.WriteLine($"line 432 ");
+               //Console.WriteLine($"line 432 ");
              }
-             Console.WriteLine("line 434");
+             //Console.WriteLine("line 434");
            }
-           Console.WriteLine("line 436");
+           //Console.WriteLine("line 436");
          }
          else
          {
             Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Invalid,"name,function has not been declared"));
             index=-1;
          }
-         Console.WriteLine("line 443");
+         //Console.WriteLine("line 443");
          object value =GeneralEvaluation(context.Available_Functions[index].Code);
          currentcontext!.Remove(currentcontext[currentcontext.Count-1]);
-         Console.WriteLine($"{value}");
+         //Console.WriteLine($"{value}");
          return value;
          
       }
