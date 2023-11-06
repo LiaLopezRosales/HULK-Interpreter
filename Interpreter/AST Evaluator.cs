@@ -5,7 +5,7 @@ public class AST_Evaluator
     private Scope scope{get;set;}
     private Context context{get;set;}
     private List<Scope>? currentcontext{get;set;}
-    private List<Error> Semantic_Errors{get;set;}
+    public List<Error> Semantic_Errors{get;set;}
      public AST_Evaluator()
      {
         context=new Context();
@@ -124,6 +124,15 @@ public class AST_Evaluator
          }
          pow.Evaluate(left,right);
          return pow.Value!;
+      }
+      else if (node.Type==Node.NodeType.Negation)
+      {
+        object negation=GeneralEvaluation(node.Branches[0]);
+        if (!(negation is bool))
+        {
+          Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Expected," boolean vale"));
+        }
+        else return !(bool)negation;
       }
       else if (node.Type==Node.NodeType.Var)
       {

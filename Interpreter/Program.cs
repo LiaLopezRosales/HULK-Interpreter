@@ -1,8 +1,4 @@
 ﻿
-//Need to implement something to find most external operator for aritmetic expression
-//string codigo = "let x=16 in log(2,x);";(Test code)
-//Arreglar recursividad
-
 AST_Evaluator Evaluator = new AST_Evaluator();
 string code = "start/";
 Tokenizer lexer = new Tokenizer();
@@ -16,6 +12,10 @@ while (true)
         break;
     }
     List<Token> possibletokens = lexer.Tokens(code);
+    // foreach (var token in possibletokens)
+    // {
+    //     Console.WriteLine(token);
+    // }
     List<Error> Lexicon = lexer.Lexic_Errors();
     if (Lexicon.Count > 0)
     {
@@ -24,6 +24,7 @@ while (true)
         {
             Console.WriteLine(error.ToString());
         }
+        lexer.lexererrors.Clear();
         continue;
     }
     else
@@ -40,6 +41,7 @@ while (true)
             {
                 Console.WriteLine(error.ToString());
             }
+            parse.errors.Clear();
             continue;
         }
         else
@@ -58,6 +60,7 @@ while (true)
                 {
                     break;
                 }
+                Evaluator.Semantic_Errors.Clear();
                 continue;
             }
             else

@@ -5,7 +5,7 @@ public class Parser
     TokenStream tokenstream;
     Scope scope;
 
-    List<Error>errors;
+    public List<Error>errors;
     public Parser(List<Token>tokens_expression)
     {   
         tokenstream=new TokenStream(tokens_expression);
@@ -225,6 +225,16 @@ public class Parser
              tokenstream.MoveForward(1);
              return subnode;
 
+        }
+        //Check
+        if (current.Value=="!")
+        {
+            tokenstream.MoveForward(1);
+            Node value=ParseExpression();
+            Node negation=new Node();
+            negation.Type=Node.NodeType.Negation;
+            negation.Branches=new List<Node>{value};
+            return negation;
         }
 
         if (tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.number)
