@@ -3,13 +3,9 @@ public class TokenStream:IEnumerable<Token>
 {
     public List<Token> tokens{get;}
     int position;
-    // public int start{get;}
-    // public int end{get;}
     public TokenStream(List<Token>tokens)
     {
        this.tokens=tokens;
-    //    start=initial;
-    //    end=final;
        position=0;
     }
 
@@ -70,15 +66,6 @@ public class TokenStream:IEnumerable<Token>
         }
         return false;
     }
-    // public bool Next(Token.Type type,int f)
-    // {
-    //     if (position<f&& LookAhead(1).Tipo==type)
-    //     {
-    //         position++;
-    //         return true;
-    //     }
-    //     return false;
-    // }
     public Token LookAhead(int k=0)
     {
         return tokens[position+k];

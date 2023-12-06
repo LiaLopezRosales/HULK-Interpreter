@@ -1,7 +1,6 @@
 public class Context
 {
     public List<Fuction> Available_Functions{get;set;}
-    //public Dictionary<string,Dictionary<int,Token>> Functions_Arguments{get;set;}
     public Dictionary<string,Func<double,double>> Trig_functions{get;}
     public Dictionary<string,Func<double>> Math_value{get;}
     public Dictionary<string,Func<double,double,double>> Log{get;}
@@ -10,7 +9,6 @@ public class Context
     public Context()
     {
         Available_Functions=new List<Fuction>();
-        //Functions_Arguments=new Dictionary<string,Dictionary<int,Token>>();
         Trig_functions = new Dictionary<string, Func<double,double>>();
         Trig_functions.Add("sin",(double argument)=>Math.Sin(argument));
         Trig_functions.Add("cos",(double argument)=>Math.Cos(argument));
@@ -23,7 +21,6 @@ public class Context
         Log = new Dictionary<string, Func<double, double, double>>();
         Log.Add("log",(double Base,double argument)=> Math.Log(argument,Base));
         Print = new Dictionary<string, Func<object, object>>();
-        //Agregar a Print funcion rand()
         object PrintReturn(object argument)
         {
             Console.WriteLine(argument.ToString());
@@ -38,9 +35,4 @@ public class Context
         }
 
     }
-
-    // public void AddFunction(string name,Node code)
-    // {
-    //     Available_Functions.Add(name,code);
-    // }
 }

@@ -12,10 +12,6 @@ while (true)
         break;
     }
     List<Token> possibletokens = lexer.Tokens(code);
-    // foreach (var token in possibletokens)
-    // {
-    //     Console.WriteLine(token);
-    // }
     List<Error> Lexicon = lexer.Lexic_Errors();
     if (Lexicon.Count > 0)
     {
@@ -31,8 +27,6 @@ while (true)
     {
         Parser parse = new Parser(possibletokens);
         Node AST = parse.Parse();
-        //Console.WriteLine(AST.Type);
-        //SubNodes(AST,0);
         List<Error> Syntactic = parse.Syntactic_Errors();
         if (Syntactic.Count > 0)
         {
