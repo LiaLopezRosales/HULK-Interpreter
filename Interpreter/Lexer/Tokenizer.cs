@@ -2,15 +2,18 @@ using System.Text.RegularExpressions;
 using System.Globalization;
 public class Tokenizer
 {
+    //Lista que recoge los errores encontrados en la etapa léxica
     public List<Error> lexererrors;
 
     public Tokenizer()
     {
         lexererrors = new List<Error>();
     }
+    //Método que genera la lista de tokens que se utiliza en las siguientes etapas
     public List<Token> Tokens(string code)
     {
-        
+        //Se utilizan expresiones regulares para separar en posibles tokenes
+        //Identifica como número negativo si el símbolo '-' está justo antes del número sin espacios entre ellos
         string patronNumeroNegativo = @"-?\d+(\.\d+)?";
         string patronTexto = "\".*?\"";
         string quotes ="\"";
@@ -19,6 +22,7 @@ public class Tokenizer
         string patron = $"{patronTexto}|{quotes}|{patronIdentificador}|{patronNumeroNegativo}|{patronPalabras} ";
         MatchCollection matches = Regex.Matches(code, patron);
         List<Token> possibletokens = new List<Token>();
+        //Cada coincidencia obtenida se identifica y se añade su token correspondiente
         foreach (Match match in matches)
         {
             Token temporal = IdentifyType(match.Value,lexererrors);
@@ -46,9 +50,11 @@ public class Tokenizer
     {
         return lexererrors;
     }
-
+    
+    //Método que dado un string identifica que tipo de token sería y devuelve este
     public static Token IdentifyType(string possibletoken,List<Error> errors)
     {
+        //Si token nunca cambia su valor es un token inválido
         Token token=new Token(Token.Type.not_id,possibletoken);
         if (possibletoken == "print" )
         {
@@ -196,16 +202,19 @@ public class Tokenizer
             token = new Token(Token.Type.boolean, possibletoken);
             
         }
+        //Se trata de convertir el string en número, si la conversión es exitosa se genera el token
         else if (double.TryParse(possibletoken, out double result))
         {
             token = new Token(Token.Type.number,possibletoken);
             
         }
+        //Se comprueba si el string está contenido entre comillas
         else if (possibletoken.StartsWith("\"") && possibletoken.EndsWith("\"")&&possibletoken!="\"")
         {
             token = new Token(Token.Type.text, possibletoken);
             
         }
+        //Si el string es comilla sola se genera un error
         else if(possibletoken=="\"")
         {
           
@@ -213,6 +222,7 @@ public class Tokenizer
         }
         else
         {
+        //En este punto el token solo puede ser un identificador así que se comprueba la validez del nombre 
             if (char.IsDigit(possibletoken[0]))
             {
                 errors.Add(new Error(Error.TypeError.Lexical_Error,Error.ErrorCode.Invalid,"token, must start with letters"));

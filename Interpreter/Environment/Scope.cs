@@ -1,5 +1,5 @@
 public class Scope
-{
+{   //Ámbito donde existen un grupo de variables
     public Scope? Parent{get;set;}
     public Dictionary<string,object> Variables{get;set;}
 

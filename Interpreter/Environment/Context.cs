@@ -1,7 +1,10 @@
 public class Context
 {
+    //Diccionario donde se agregan y consultan las funciones creadas
     public List<Fuction> Available_Functions{get;set;}
+    //Diccionario que contiene las funciones predeterminadas que requieren un parámetro de entrada
     public Dictionary<string,Func<double,double>> Trig_functions{get;}
+    //Funciones predeterminadas sin parámetro
     public Dictionary<string,Func<double>> Math_value{get;}
     public Dictionary<string,Func<double,double,double>> Log{get;}
     public Dictionary<string,Func<object,object>> Print{get;}

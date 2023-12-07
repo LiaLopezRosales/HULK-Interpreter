@@ -1,5 +1,5 @@
 public class Node
-{
+{   //Clase principal que forma el árbol,define el tipo de la expresión su valor y los nodos que se derivan de ella
     public NodeType Type{get;set;}
     public object? NodeExpression{get;set;}
     public List<Node>Branches;

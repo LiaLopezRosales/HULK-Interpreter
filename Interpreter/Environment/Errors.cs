@@ -1,5 +1,5 @@
 public class Error
-{
+{   //Clase donde se expresan y agrupan los detalles de un error encontrado
     public ErrorCode Code{get;set;}
     public string Argument{get;set;}
     public TypeError type{get;set;}

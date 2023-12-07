@@ -13,7 +13,7 @@ public class Parser
         scope=new Scope();
         errors = new List<Error>();
     }
-
+    //Método principal que inicia el proceso sintáctico y devuelve el árbol que se genera
     public Node Parse()
     {
         Node AST=ParseExpression();
@@ -24,6 +24,7 @@ public class Parser
         return errors;
     }
     
+    //Identifica y manda a parsear una expresión principal
     public Node ParseExpression()
     {
         if ((tokenstream.Position()<tokens.Count)&& tokens[tokenstream.Position()].Tipo==Token.Type.print)
@@ -38,7 +39,7 @@ public class Parser
         {
             return IF_ElSE();
         }
-        if ((tokenstream.Position()<tokens.Count)&& tokens[tokenstream.Position()].Value=="function")
+        if ((tokenstream.Position()<tokens.Count)&& (tokenstream.Position()<2)&&tokens[tokenstream.Position()].Value=="function")
         {
             return Function();
         }
@@ -47,20 +48,23 @@ public class Parser
     }
     public Node Print()
     {
+        //Se comprueba que print este seguido de un (
        tokenstream.MoveForward(1);
        if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.left_bracket)
        {
          errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'(' symbol"));
        }
        else tokenstream.MoveForward(1);
+       //Se recoge el valor de print parseando la expresión en su interior 
        Node argument=ParseExpression();
-       Console.WriteLine(tokenstream.tokens[tokenstream.Position()].Value);
+       //Se comprueba que la expresión cierre adecuadamente
        if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.right_bracket)
        {
         Console.WriteLine(tokenstream.tokens[tokenstream.Position()].Tipo);
          errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"')' symbol"));
        }
        else tokenstream.MoveForward(1);
+       //Se crea y devuelve el nodo tipo Print asociado a la expresión de su valor
        Node tem=new Node();
        tem.Type=Node.NodeType.Print;
        tem.Branches=new List<Node>{argument};
@@ -69,25 +73,30 @@ public class Parser
     public Node IF_ElSE()
     {
         tokenstream.MoveForward(1);
-        
+        //Comprobación de la adecuada sintaxis de la expresión
        if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.left_bracket)
        {
          errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'(' symbol"));
        }
        else tokenstream.MoveForward(1);
-       Node argument=ParseOP();
+       //
+       //Se recoge el argumento de la condición
+       Node argument=ParseExpression();
        if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.right_bracket)
        {
          errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"')' symbol"));
        }
        else tokenstream.MoveForward(1);
+       //Se recoge el argumento de la expresión si es verdadera
        Node if_part=ParseExpression();
        if (tokenstream.tokens[tokenstream.Position()].Value!="else")
        {
          errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'else' keyword after if expresion"));
        }
        else tokenstream.MoveForward(1);
+       //Se recoge el argumento de la expresión si es falsa
        Node else_part=ParseExpression();
+       //Se crea y devuelve el nodo Conditional que contiene la condición,la parte verdadera y la parte falsa
        Node conditional=new Node();
        conditional.Type=Node.NodeType.Conditional;
        conditional.Branches=new List<Node>{argument,if_part,else_part};
@@ -96,13 +105,16 @@ public class Parser
     public Node Function()
     {
         tokenstream.MoveForward(1);
+        //Se crea el nodo al que van a estar todos los parámetros
         Node param =new Node();
         param.Type=Node.NodeType.parameters;
+        //Se comprueba que se declara el nombre de la función a crear
         if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.identifier)
         {
             errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"function name"));
         }
         else tokenstream.MoveForward(1);
+        //Se recoge en un nodo el nombre de la función
         Node name =new Node();
         name.Type=Node.NodeType.FucName;
         name.NodeExpression=tokenstream.tokens[tokenstream.Position()-1].Value;
@@ -111,6 +123,7 @@ public class Parser
             errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'(' symbol"));
         }
         else tokenstream.MoveForward(1);
+        //En el ciclo se van aadiendo parámetros al nodo parámetros hasta que se acaben
         while (tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.identifier)
         {
             if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.identifier)
@@ -137,11 +150,13 @@ public class Parser
             errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'=>' symbol"));
         }
         else tokenstream.MoveForward(1);
+        //Se obtiene el cuerpo de la función
         Node body=ParseExpression();
         if(body.NodeExpression is Error)
         {
             errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Invalid,"function body"));
         }
+        //Se crea y devuelve el nodo Function que contiene los nodos nombre,parámetros y cuerpo
         Node function = new Node();
         function.Type=Node.NodeType.Fuction;
         function.Branches=new List<Node>{name,param,body};
@@ -154,7 +169,7 @@ public class Parser
         Node assignation =new Node();
         assignation.Type=Node.NodeType.Assignations;
         bool existcomm=false;
-
+        //Un ciclo donde mientras existan se van agregando las variables creadas(debe existir al menos una)
         do
         {
             if(existcomm)
@@ -175,7 +190,8 @@ public class Parser
                 errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'=' symbol"));
              }
              else tokenstream.MoveForward(1);
-             Node value=ParseOP();
+             //
+             Node value=ParseExpression();
              if (value.NodeExpression is Error)
             {
             errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Invalid,"let-in expression"));
@@ -191,17 +207,21 @@ public class Parser
             errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'in' keyword"));
         }
         else tokenstream.MoveForward(1);
+        //Se obtiene la expresión donde se evaluan las variables creadas
         Node operators =ParseExpression();
+        //Se comprueba que la expresión sea válida
         if (operators.NodeExpression is Error)
         {
             errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Invalid,"expression let-in"));
         }
+        //Se devuelve el Let que contiene las variables declaradas y el ámbito donde se evaluan
         Node var =new Node();
         var.Type=Node.NodeType.Let_exp;
         var.Branches=new List<Node>{assignation,operators};
         return var;
     }
-
+    
+    //Método que parsea expresiones unitarias(tienen sentido por sí solas)
     public Node Unit()
     {
         if (tokenstream.Position()>=tokenstream.tokens.Count)
@@ -209,7 +229,7 @@ public class Parser
             errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"more tokens,end of expression"));
         }
         Token current = tokenstream.tokens[tokenstream.Position()];
-
+        //Parsea una expresión entre paréntesis(nueva expresión)
         if (current.Tipo==Token.Type.left_bracket)
         {
             tokenstream.MoveForward(1);
@@ -222,6 +242,7 @@ public class Parser
              return subnode;
 
         }
+        //Parseo de la negación
         if (current.Value=="!")
         {
             tokenstream.MoveForward(1);
@@ -231,7 +252,7 @@ public class Parser
             negation.Branches=new List<Node>{value};
             return negation;
         }
-
+        //Parseo de un número
         if (tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.number)
         {
             double value = (Convert.ToDouble(tokenstream.tokens[tokenstream.Position()].Value,CultureInfo.InvariantCulture));
@@ -241,6 +262,7 @@ public class Parser
             tokenstream.MoveForward(1);
             return temp;
         }
+        //Texto
         else if (tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.text)
         {
            string value=(tokenstream.tokens[tokenstream.Position()].Value);
@@ -250,6 +272,7 @@ public class Parser
            tokenstream.MoveForward(1);
            return temp;
         }
+        //Se parsean a continuación los valores y funciones predeterminadas
         else if (tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.PI)
         {
             Node temp=new Node();
@@ -412,6 +435,7 @@ public class Parser
             return temp;
 
         }
+        //Se parsea un identificar(se identifica si es nombre de función o de variable)
         else if (tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.identifier)
         {
             if (tokenstream.tokens[tokenstream.Position()+1].Tipo==Token.Type.left_bracket)
@@ -430,7 +454,7 @@ public class Parser
                     {
                         Node name_of_parm=new Node();
                         name_of_parm.Type=Node.NodeType.ParName;
-                        object val = ParseOP();
+                        object val = ParseExpression();
                         name_of_parm.NodeExpression=val;
                         parameters.Branches.Add(name_of_parm);
                         if (tokenstream.tokens[tokenstream.Position()].Value==",")
@@ -460,10 +484,12 @@ public class Parser
         {
             return Let_In();
         }
+        //Se parsea una expresión vacía
         else if(tokenstream.tokens[tokenstream.Position()]==null)
         {
             return new Node();
         }
+        //Si no coincide con alguno de los anteriores es un valor inválido
         else
         {
             Node temp = new Node();
@@ -472,7 +498,8 @@ public class Parser
         }
        
     }
-
+    
+    //Parser de la operación potencia(mayor nivel de prioridad,accede directamente a Unit)
     public Node ParsePower()
     {
         Node left =Unit();
@@ -497,6 +524,7 @@ public class Parser
         }
         else return left;
     }
+    //Parser de las operaciones multiplicación y división(penúltimo nivel de prioridad)
     public Node ParseMul_O_Div()
     {
         Node left =ParsePower();
@@ -528,6 +556,7 @@ public class Parser
         }
         else return left;
     }
+    //Parser de las operaciones suma y resta(nivel 4)
     public Node ParseSum_O_Sub()
     {
         Node left =ParseMul_O_Div();
@@ -557,6 +586,7 @@ public class Parser
         }
         else return left;
     }
+//Parser de operaciones de comparación(nivel 3,pues a diferencia de & y | sus miembros pueden y deben en algunos casos ser números)
     public Node ParseComparation()
     {
         Node left =ParseSum_O_Sub();
@@ -600,6 +630,7 @@ public class Parser
         }
         else return left;
     }
+    //Parser de las operaciones & y |(nivel 2)
     public Node ParseOr_O_And()
     {
         Node left =ParseComparation();
@@ -628,6 +659,7 @@ public class Parser
         }
         else return left;
     }
+    //Parser principal de las operaciones, manda a parsear una concatenación
     public Node ParseOP()
     { 
         Node left =ParseOr_O_And();

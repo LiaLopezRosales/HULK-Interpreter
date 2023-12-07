@@ -6,6 +6,7 @@ public class AST_Evaluator
     private Context context{get;set;}
     private List<Scope>? currentcontext{get;set;}
     public List<Error> Semantic_Errors{get;set;}
+    //Se crean el contexto al que se irán agregando funciones,lista de errores encontrados y ámbitos de variables
      public AST_Evaluator()
      {
         context=new Context();
@@ -13,32 +14,24 @@ public class AST_Evaluator
         Semantic_Errors=new List<Error>();
         AST=new Node();
      }
-
+      
+      //Se asigna el árbol a evaluar y se crea un scope padre para él
      public void Tree_Reader(Node root)
      {
        AST=root;
        currentcontext=new List<Scope>(){new Scope()};
      }
-
+     //Método que inicia la evaluación
      public object StartEvaluation(Node node)
      {
       if (node.Type==Node.NodeType.Print)
       {
          object print=GeneralEvaluation(node.Branches[0]);
-         if (Semantic_Errors.Count>0)
-         {
-            Console.WriteLine(print);
-         }
          return print;
-         
       }
       else
       { 
          object result=GeneralEvaluation(node);
-         if (Semantic_Errors.Count>0)
-         {
-            Console.WriteLine(result);
-         }
          return result;
       }
      }
@@ -49,6 +42,7 @@ public class AST_Evaluator
 
      public object GeneralEvaluation(Node node)
      {
+      //Si el nodo es un valor numérico,de texto o booleano retorna dicho valor
       if (node.Type==Node.NodeType.Text)
       {
          return node.NodeExpression!;
@@ -65,6 +59,7 @@ public class AST_Evaluator
       {
          return true;
       }
+   //En la evaluación de operaciones se asigna las partes derecha e izquierda y se comprueba si con esas expresiones ya evaluadas es válida su ejecución
       else if (node.Type==Node.NodeType.Sum)
       {
          Sum sum =new Sum();
@@ -134,6 +129,7 @@ public class AST_Evaluator
         }
         else return !(bool)negation;
       }
+      //Si el scope actual no contiene a la variable se lanza un error en caso contrario se devuelve el valor guardado
       else if (node.Type==Node.NodeType.Var)
       {
          if (!currentcontext![currentcontext.Count-1].Variables.ContainsKey(node.NodeExpression!.ToString()!))
@@ -289,6 +285,7 @@ public class AST_Evaluator
          con.Evaluate(left,right);
          return con.Value!;
       }
+      //Si node es el un nombre se devuelve el valor guardado
       else if (node.Type==Node.NodeType.FucName)
       {
          return node.NodeExpression!;
@@ -301,11 +298,13 @@ public class AST_Evaluator
       {
          return node.NodeExpression!;
       }
+      //Se evalua el argumento y esto se envia a la función creada Print en el contexto
       else if (node.Type==Node.NodeType.Print)
       {
          object arg = GeneralEvaluation(node.Branches[0]);
          return context.Print["print"](arg);
       }
+      //Se evaluan los argumentos y se accede a las funciones predeterminadas del contexto con estos
       else if (node.Type==Node.NodeType.Sin)
       {
          object arg = GeneralEvaluation(node.Branches[0]);
@@ -344,6 +343,7 @@ public class AST_Evaluator
       {
          return context.Math_value["E"]();
       }
+      //Se evalua la condición,se comprueba que devuelva un bool, y en dependencia de ese bool se evalua if o else
       else if (node.Type==Node.NodeType.Conditional)
       {
          object condition=GeneralEvaluation(node.Branches[0]);
@@ -366,18 +366,22 @@ public class AST_Evaluator
          
          return Conditional.Value!;
       }
+      //Guarda la definición de la función en el contexto
       else if (node.Type==Node.NodeType.Fuction)
-      {
+      {  //Se crea un diccionario para guardar los parámetros
          Dictionary<string,object> Parameters = new Dictionary<string, object>();
          Node param=node.Branches[1];
          string par_name="";
+         //Se agregan todos los parámetros parseados
          for (int i = 0; i < param.Branches.Count; i++)
          {
             par_name=(string)param.Branches[i].NodeExpression!;
             Parameters.Add(par_name,"");
          }
+         //Se crea un objeto función con el nombre,el cuerpo y los parámetros obtenidos
          Fuction func=new Fuction(node.Branches[0].NodeExpression!.ToString()!,node.Branches[2],Parameters);
          bool exist=false;
+         //Se busca si ya existe una función con ese nombre,de ser así se lanza excepción
          foreach (var function in context.Available_Functions)
          {
             if (function.Name==par_name)
@@ -393,11 +397,13 @@ public class AST_Evaluator
          return context.Available_Functions;
          
       }
+      //Se evalua una llamada a una función supuestamente existente
       else if (node.Type==Node.NodeType.Declared_Fuc)
       {
          string dfunc_name = node.Branches[0].NodeExpression!.ToString()!;
          Node func_parameters=node.Branches[1];
          bool exist=false;
+         //Se comprueba si la función fue declarada con anterioridad
          foreach (var function in context.Available_Functions)
          {
             if (function.Name==dfunc_name)
@@ -413,20 +419,26 @@ public class AST_Evaluator
            
            for (int i = 0; i < context.Available_Functions.Count; i++)
            {
+            //Se accede a los detalles de la función guardada
              if (context.Available_Functions[i].Name==dfunc_name)
              {
+               //Se comprueba si tienen la misma cantidad de argumentos
                if (context.Available_Functions[i].Functions_Arguments.Count==func_parameters.Branches.Count)
                {
+                  //Se agregan los argumentos dados a el scope del cuerpo de la función
                   foreach (var p_name in currentcontext[currentcontext.Count-2].Variables.Keys)
                   {
                      currentcontext[currentcontext.Count-1].Variables.Add(p_name,currentcontext[currentcontext.Count-2].Variables[p_name]);
                   }
                   int param_number=0;
                   foreach (var p_name in context.Available_Functions[i].Functions_Arguments.Keys)
-                  {
+                  { 
+                     //Se asignan los argumentos dados a su correspondiente en los declarados por la función
                      context.Available_Functions[i].Functions_Arguments[p_name]=func_parameters.Branches[param_number].NodeExpression!;
+                     //Se evaluan estos argumentos
                      if (currentcontext[currentcontext.Count-1].Variables.ContainsKey(p_name))
                      {
+                        
                         currentcontext[currentcontext.Count-1].Variables[p_name]=GeneralEvaluation((Node)func_parameters.Branches[param_number].NodeExpression!);
                         param_number++;
                      }
@@ -443,6 +455,7 @@ public class AST_Evaluator
                }
                else
                {
+                  //Se lanza un error si el número de parámetros no coincide
                   Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Expected,$"{context.Available_Functions[i].Functions_Arguments.Count} parameters but received {func_parameters.Branches.Count}"));
                }
               
@@ -453,11 +466,14 @@ public class AST_Evaluator
          }
          else
          {
+            //Se lanza error si se está llamando a una función que no existe
             Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Invalid,"name,function has not been declared"));
             index=-1;
          }
          ;
+         //Se evalua la función solicitada
          object value =GeneralEvaluation(context.Available_Functions[index].Code);
+         //Se elimina el contexto creado para la función
          currentcontext!.Remove(currentcontext[currentcontext.Count-1]);
         
          return value;
@@ -465,15 +481,19 @@ public class AST_Evaluator
       }
       else if (node.Type==Node.NodeType.Assignations)
       {
+         //Se crea el contexto de las variables declaradas
         Scope var_of_let=scope.Child();
         foreach (var name in currentcontext![currentcontext.Count-1].Variables.Keys)
         {
+         //Se agregan todas las variables existentes
           var_of_let.Variables.Add(name,currentcontext![currentcontext.Count-1].Variables[name]);
         }
         foreach (Node branch in node.Branches)
         {
+         //Se procesa cada variable declarada
          string name=branch.Branches[0].NodeExpression!.ToString()!;
          object value=GeneralEvaluation(branch.Branches[1]);
+         //Si ya existe el nombre de la variable se actualiza su valor
          if (var_of_let.Variables.ContainsKey(name))
          {
             var_of_let.Variables[name]=value;
@@ -488,13 +508,16 @@ public class AST_Evaluator
       }
       else if (node.Type==Node.NodeType.Let_exp)
       {
+         //Se evalua la asignación y a continuación la parte in ya teniendo el nuevo scope
          GeneralEvaluation(node.Branches[0]);
          object result=GeneralEvaluation(node.Branches[1]);
+         //Se elimina el scope existente en esta expresión
          currentcontext!.Remove(currentcontext[currentcontext.Count-1]);
          return result;
       }
       else
       {
+         //Si no evalua como ninguno de los nodos anteriores no existe la operación
          Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Unknown,"operation required"));
       }
       
