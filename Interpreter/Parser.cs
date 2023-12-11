@@ -529,7 +529,7 @@ public class Parser
     {
         Node left =ParsePower();
         Node pro=new Node();
-        while (tokenstream.Position()<tokenstream.tokens.Count&&(tokenstream.tokens[tokenstream.Position()].Value=="*"||tokenstream.tokens[tokenstream.Position()].Value=="/"))
+        while (tokenstream.Position()<tokenstream.tokens.Count&&(tokenstream.tokens[tokenstream.Position()].Value=="*"||tokenstream.tokens[tokenstream.Position()].Value=="/"||tokenstream.tokens[tokenstream.Position()].Value=="%"))
         {
             
             Token.Type whatkind = tokenstream.tokens[tokenstream.Position()].Tipo;
@@ -543,6 +543,10 @@ public class Parser
             if (whatkind==Token.Type.multiplication)
             {
                pro.Type=Node.NodeType.Mul; 
+            }
+            else if (whatkind==Token.Type.module)
+            {
+                pro.Type=Node.NodeType.Mod;
             }
             else pro.Type=Node.NodeType.Div;
             

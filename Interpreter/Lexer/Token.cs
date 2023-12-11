@@ -3,7 +3,7 @@ public  class Token
     public Type Tipo{get; set;}
     public string Value {get; set;}
 
-    public enum Type{sin,cos,sqrt,exp,rand,log,PI,E,print, sum,substraction,multiplication,division,power, keyword, conditional, symbol,left_bracket,right_bracket, not, concatenate, Or,And,minor,major,equal_minor,equal_major,equal,diferent, boolean, identifier, text , number,not_id, EOL}
+    public enum Type{sin,cos,sqrt,exp,rand,log,PI,E,print, sum,substraction,multiplication,division,module,power, keyword, conditional, symbol,left_bracket,right_bracket, not, concatenate, Or,And,minor,major,equal_minor,equal_major,equal,diferent, boolean, identifier, text , number,not_id, EOL}
     
     public Token(Type tipo,string value)
     {

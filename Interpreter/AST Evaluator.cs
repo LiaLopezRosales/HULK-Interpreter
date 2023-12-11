@@ -105,8 +105,25 @@ public class AST_Evaluator
          {
             Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Expected,"numerical values"));
          }
+         if (Convert.ToDouble(right,CultureInfo.InvariantCulture)==0)
+         {
+            Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Invalid,"operation,can't divide by zero"));
+            return left;
+         }
          div.Evaluate(left,right);
          return div.Value!;
+      }
+      else if (node.Type==Node.NodeType.Mod)
+      {
+         Module mod =new Module();
+         object left = GeneralEvaluation(node.Branches[0]);
+         object right=GeneralEvaluation(node.Branches[1]);
+         if (!(left is double)||!(right is double))
+         {
+            Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Expected,"numerical values"));
+         }
+         mod.Evaluate(left,right);
+         return mod.Value!;
       }
       else if (node.Type==Node.NodeType.Pow)
       {
@@ -278,9 +295,9 @@ public class AST_Evaluator
          Concatenation con =new Concatenation();
          object left = GeneralEvaluation(node.Branches[0]);
          object right=GeneralEvaluation(node.Branches[1]);
-         if (!(left is string)||!(right is string))
+         if (!(left is string || left is double || left is bool)||!(right is string || right is double || right is bool))
          {
-            Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Expected,"string values"));
+            Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Expected,"valid values"));
          }
          con.Evaluate(left,right);
          return con.Value!;
