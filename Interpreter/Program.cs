@@ -57,10 +57,6 @@ while (true)
                 {
                     Console.WriteLine(error.ToString());
                 }
-                // if (AST.Type==Node.NodeType.Fuction)
-                // {
-                //     break;
-                // }
                 Evaluator.Semantic_Errors.Clear();
                 continue;
             }
