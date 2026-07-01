@@ -1,33 +1,14 @@
-using System.Globalization;
-public class Equal:Binary
+public class Equal : BinaryExpression
 {
-    public Equal()
-    {}
-    public override ExpressionType Type { get => Type=ExpressionType.Bool; set => Type=ExpressionType.Bool; }
+    public Equal(Expression left, Expression right) : base(left, right) { }
 
-    public override object? Value { get => base.Value; set => base.Value = value; }
-    public override void Evaluate(object left,object right)
+    public override object Evaluate(Scope scope, Context context, List<Error> errors)
     {
-        if (left is double && right is double)
-        {
-            Value = Convert.ToDouble(left,CultureInfo.InvariantCulture) == Convert.ToDouble(right,CultureInfo.InvariantCulture);
-        }
-        if(left is string && right is string)
-        {
-            Value = (left.ToString() == right.ToString());
-        }
-        if (left is bool && right is bool)
-        {
-            Value = (bool)left==(bool)right;
-        }
-         
-    }
-    public override string ToString()
-    {
-        if (Value==null)
-        {
-            return String.Format("({0}=={1})",Left,Right);
-        }
-        return Value.ToString()!;
+        var l = Left.Evaluate(scope, context, errors);
+        var r = Right.Evaluate(scope, context, errors);
+        if (l.GetType() == r.GetType())
+            return l.Equals(r);
+        errors.Add(new Error(Error.TypeError.Semantic_Error, Error.ErrorCode.Expected, "equal type of values"));
+        return false;
     }
 }

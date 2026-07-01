@@ -1,21 +1,13 @@
 using System.Globalization;
-public class Multiplication:Binary
-{
-    public Multiplication()
-    {}
-    public override ExpressionType Type { get => base.Type; set => base.Type = value; }
 
-    public override object? Value { get => base.Value; set => base.Value = value; }
-    public override void Evaluate(object left,object right)
+public class Multiplication : BinaryExpression
+{
+    public Multiplication(Expression left, Expression right) : base(left, right) { }
+
+    public override object Evaluate(Scope scope, Context context, List<Error> errors)
     {
-        Value = Convert.ToDouble(left,CultureInfo.InvariantCulture) * Convert.ToDouble(right,CultureInfo.InvariantCulture);
-    }
-    public override string ToString()
-    {
-        if (Value==null)
-        {
-            return String.Format("({0}*{1})",Left,Right);
-        }
-        return Value.ToString()!;
+        var l = Left.Evaluate(scope, context, errors);
+        var r = Right.Evaluate(scope, context, errors);
+        return AreNumbers(l, r, errors) ? Convert.ToDouble(l, CultureInfo.InvariantCulture) * Convert.ToDouble(r, CultureInfo.InvariantCulture) : 0.0;
     }
 }

@@ -1,692 +1,542 @@
 using System.Globalization;
+
 public class Parser
 {
-    List<Token> tokens;
-    TokenStream tokenstream;
-    Scope scope;
+    private TokenStream tokenstream;
+    private List<Token> tokens;
 
-    public List<Error>errors;
-    public Parser(List<Token>tokens_expression)
-    {   
-        tokenstream=new TokenStream(tokens_expression);
-        tokens=tokens_expression;
-        scope=new Scope();
+    public List<Error> errors;
+
+    public Parser(List<Token> tokens_expression)
+    {
+        tokenstream = new TokenStream(tokens_expression);
+        tokens = tokens_expression;
         errors = new List<Error>();
     }
-    //Método principal que inicia el proceso sintáctico y devuelve el árbol que se genera
-    public Node Parse()
+
+    public Expression Parse()
     {
-        Node AST=ParseExpression();
-        return AST;
+        return ParseExpression();
     }
+
     public List<Error> Syntactic_Errors()
     {
         return errors;
     }
-    
-    //Identifica y manda a parsear una expresión principal
-    public Node ParseExpression()
+
+    public Expression ParseExpression()
     {
-        if ((tokenstream.Position()<tokens.Count)&& tokens[tokenstream.Position()].Tipo==Token.Type.print)
-        {
+        if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Tipo == Token.Type.print)
             return Print();
-        }
-        if ((tokenstream.Position()<tokens.Count)&& tokens[tokenstream.Position()].Value=="let")
-        {
+
+        if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Value == "let")
             return Let_In();
-        }
-        if ((tokenstream.Position()<tokens.Count)&& tokens[tokenstream.Position()].Value=="if")
-        {
+
+        if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Value == "if")
             return IF_ElSE();
-        }
-        if ((tokenstream.Position()<tokens.Count)&& (tokenstream.Position()<2)&&tokens[tokenstream.Position()].Value=="function")
-        {
+
+        if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Value == "function")
             return Function();
-        }
+
+        if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Value == "while")
+            return While();
+
+        if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Tipo == Token.Type.symbol && tokens[tokenstream.Position()].Value == "{")
+            return Block();
+
         return ParseOP();
+    }
 
-    }
-    public Node Print()
-    {
-        //Se comprueba que print este seguido de un (
-       tokenstream.MoveForward(1);
-       if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.left_bracket)
-       {
-         errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'(' symbol"));
-       }
-       else tokenstream.MoveForward(1);
-       //Se recoge el valor de print parseando la expresión en su interior 
-       Node argument=ParseExpression();
-       //Se comprueba que la expresión cierre adecuadamente
-       if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.right_bracket)
-       {
-        Console.WriteLine(tokenstream.tokens[tokenstream.Position()].Tipo);
-         errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"')' symbol"));
-       }
-       else tokenstream.MoveForward(1);
-       //Se crea y devuelve el nodo tipo Print asociado a la expresión de su valor
-       Node tem=new Node();
-       tem.Type=Node.NodeType.Print;
-       tem.Branches=new List<Node>{argument};
-       return tem;
-    }
-    public Node IF_ElSE()
+    public Expression Print()
     {
         tokenstream.MoveForward(1);
-        //Comprobación de la adecuada sintaxis de la expresión
-       if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.left_bracket)
-       {
-         errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'(' symbol"));
-       }
-       else tokenstream.MoveForward(1);
-       //
-       //Se recoge el argumento de la condición
-       Node argument=ParseExpression();
-       if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.right_bracket)
-       {
-         errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"')' symbol"));
-       }
-       else tokenstream.MoveForward(1);
-       //Se recoge el argumento de la expresión si es verdadera
-       Node if_part=ParseExpression();
-       if (tokenstream.tokens[tokenstream.Position()].Value!="else")
-       {
-         errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'else' keyword after if expresion"));
-       }
-       else tokenstream.MoveForward(1);
-       //Se recoge el argumento de la expresión si es falsa
-       Node else_part=ParseExpression();
-       //Se crea y devuelve el nodo Conditional que contiene la condición,la parte verdadera y la parte falsa
-       Node conditional=new Node();
-       conditional.Type=Node.NodeType.Conditional;
-       conditional.Branches=new List<Node>{argument,if_part,else_part};
-       return conditional;
+        if (tokenstream.tokens[tokenstream.Position()].Tipo != Token.Type.left_bracket)
+            errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "'(' symbol"));
+        else
+            tokenstream.MoveForward(1);
+
+        Expression argument = ParseExpression();
+
+        if (tokenstream.tokens[tokenstream.Position()].Tipo != Token.Type.right_bracket)
+            errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "')' symbol"));
+        else
+            tokenstream.MoveForward(1);
+
+        return new PrintExpression(argument);
     }
-    public Node Function()
+
+    public Expression IF_ElSE()
     {
         tokenstream.MoveForward(1);
-        //Se crea el nodo al que van a estar todos los parámetros
-        Node param =new Node();
-        param.Type=Node.NodeType.parameters;
-        //Se comprueba que se declara el nombre de la función a crear
-        if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.identifier)
-        {
-            errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"function name"));
-        }
-        else tokenstream.MoveForward(1);
-        //Se recoge en un nodo el nombre de la función
-        Node name =new Node();
-        name.Type=Node.NodeType.FucName;
-        name.NodeExpression=tokenstream.tokens[tokenstream.Position()-1].Value;
-        if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.left_bracket)
-        {
-            errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'(' symbol"));
-        }
-        else tokenstream.MoveForward(1);
-        //En el ciclo se van aadiendo parámetros al nodo parámetros hasta que se acaben
-        while (tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.identifier)
-        {
-            if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.identifier)
-        {
-            errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"parameter name"));
-        }
-        else tokenstream.MoveForward(1);
-        Node par_name=new Node();
-        par_name.Type=Node.NodeType.ParName;
-        par_name.NodeExpression=tokenstream.tokens[tokenstream.Position()-1].Value;
-        param.Branches.Add(par_name);
-        if (tokenstream.tokens[tokenstream.Position()].Value==",")
+
+        if (tokenstream.tokens[tokenstream.Position()].Tipo != Token.Type.left_bracket)
+            errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "'(' symbol"));
+        else
+            tokenstream.MoveForward(1);
+
+        Expression condition = ParseExpression();
+
+        if (tokenstream.tokens[tokenstream.Position()].Tipo != Token.Type.right_bracket)
+            errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "')' symbol"));
+        else
+            tokenstream.MoveForward(1);
+
+        Expression ifPart = ParseExpression();
+
+        Expression? elsePart = null;
+        if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Value == "else")
         {
             tokenstream.MoveForward(1);
+            elsePart = ParseExpression();
         }
-        }
-        if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.right_bracket)
+        else if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Value == "elif")
         {
-            errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"')' symbol"));
+            tokenstream.MoveForward(1);
+            elsePart = IF_ElSE();
         }
-        else tokenstream.MoveForward(1);
-        if (tokenstream.tokens[tokenstream.Position()].Value!="=>")
-        {
-            errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'=>' symbol"));
-        }
-        else tokenstream.MoveForward(1);
-        //Se obtiene el cuerpo de la función
-        Node body=ParseExpression();
-        if(body.NodeExpression is Error)
-        {
-            errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Invalid,"function body"));
-        }
-        //Se crea y devuelve el nodo Function que contiene los nodos nombre,parámetros y cuerpo
-        Node function = new Node();
-        function.Type=Node.NodeType.Fuction;
-        function.Branches=new List<Node>{name,param,body};
-        return function;
+
+        return new ConditionalExpression(condition, ifPart, elsePart);
     }
-    
-    public Node Let_In()
+
+    public Expression Function()
     {
         tokenstream.MoveForward(1);
-        Node assignation =new Node();
-        assignation.Type=Node.NodeType.Assignations;
-        bool existcomm=false;
-        //Un ciclo donde mientras existan se van agregando las variables creadas(debe existir al menos una)
-        do
+
+        List<string> parameters = new List<string>();
+
+        if (tokenstream.tokens[tokenstream.Position()].Tipo != Token.Type.identifier)
+            errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "function name"));
+        else
+            tokenstream.MoveForward(1);
+
+        string name = tokenstream.tokens[tokenstream.Position() - 1].Value;
+
+        if (tokenstream.tokens[tokenstream.Position()].Tipo != Token.Type.left_bracket)
+            errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "'(' symbol"));
+        else
+            tokenstream.MoveForward(1);
+
+        while (tokenstream.Position() < tokens.Count && tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.identifier)
         {
-            if(existcomm)
-            {
+            parameters.Add(tokenstream.tokens[tokenstream.Position()].Value);
+            tokenstream.MoveForward(1);
+            if (tokenstream.Position() < tokens.Count && tokenstream.tokens[tokenstream.Position()].Value == ",")
                 tokenstream.MoveForward(1);
-            }
-            existcomm=true;
-            if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.identifier || ((tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.identifier && tokenstream.tokens[tokenstream.Position()+1].Tipo==Token.Type.left_bracket)))
-            {
-                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"variable identifier"));
-            }
-            else tokenstream.MoveForward(1);
-             Node var_name=new Node();
-             var_name.Type=Node.NodeType.VarName;
-             var_name.NodeExpression=tokenstream.tokens[tokenstream.Position()-1].Value;
-             if (tokenstream.tokens[tokenstream.Position()].Value!="=")
-             {
-                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'=' symbol"));
-             }
-             else tokenstream.MoveForward(1);
-             //
-             Node value=ParseExpression();
-             if (value.NodeExpression is Error)
-            {
-            errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Invalid,"let-in expression"));
-            }
-            Node variab=new Node();
-            variab.Type=Node.NodeType.Assigment;
-            variab.Branches=new List<Node>{var_name,value};
-            assignation.Branches.Add(variab);
+        }
 
-        } while (tokenstream.tokens[tokenstream.Position()].Value==",");
-        if (tokenstream.tokens[tokenstream.Position()].Value!="in")
+        if (tokenstream.Position() < tokens.Count && tokenstream.tokens[tokenstream.Position()].Tipo != Token.Type.right_bracket)
+            errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "')' symbol"));
+        else
+            tokenstream.MoveForward(1);
+
+        // Check for expression block body { }
+        if (tokenstream.Position() < tokens.Count && tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.symbol && tokenstream.tokens[tokenstream.Position()].Value == "{")
         {
-            errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'in' keyword"));
+            Expression body = Block();
+            return new FunctionDefinition(name, parameters, body);
         }
-        else tokenstream.MoveForward(1);
-        //Se obtiene la expresión donde se evaluan las variables creadas
-        Node operators =ParseExpression();
-        //Se comprueba que la expresión sea válida
-        if (operators.NodeExpression is Error)
+
+        if (tokenstream.Position() < tokens.Count && tokenstream.tokens[tokenstream.Position()].Value != "=>")
+            errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "'=>' symbol"));
+        else
+            tokenstream.MoveForward(1);
+
+        Expression bodyExpr = ParseExpression();
+
+        if (bodyExpr is not LiteralExpression && bodyExpr is not VariableExpression && bodyExpr is not BinaryExpression && bodyExpr is not UnaryExpression
+            && bodyExpr is not ConditionalExpression && bodyExpr is not LetExpression && bodyExpr is not PrintExpression && bodyExpr is not FunctionCall
+            && bodyExpr is not BuiltinCall && bodyExpr is not WhileExpression && bodyExpr is not Concatenation && bodyExpr is not BlockExpression)
         {
-            errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Invalid,"expression let-in"));
+            errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Invalid, "function body"));
         }
-        //Se devuelve el Let que contiene las variables declaradas y el ámbito donde se evaluan
-        Node var =new Node();
-        var.Type=Node.NodeType.Let_exp;
-        var.Branches=new List<Node>{assignation,operators};
-        return var;
+
+        return new FunctionDefinition(name, parameters, bodyExpr);
     }
-    
-    //Método que parsea expresiones unitarias(tienen sentido por sí solas)
-    public Node Unit()
-    {
-        if (tokenstream.Position()>=tokenstream.tokens.Count)
-        {
-            errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"more tokens,end of expression"));
-        }
-        Token current = tokenstream.tokens[tokenstream.Position()];
-        //Parsea una expresión entre paréntesis(nueva expresión)
-        if (current.Tipo==Token.Type.left_bracket)
-        {
-            tokenstream.MoveForward(1);
-            Node subnode=ParseExpression();
-            if (tokenstream.Position()>=tokenstream.tokens.Count&&tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.right_bracket)
-            {
-                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"')' symbol"));
-            }
-             tokenstream.MoveForward(1);
-             return subnode;
 
-        }
-        //Parseo de la negación
-        if (current.Value=="!")
-        {
+    public Expression While()
+    {
+        tokenstream.MoveForward(1);
+
+        if (tokenstream.tokens[tokenstream.Position()].Tipo != Token.Type.left_bracket)
+            errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "'(' symbol"));
+        else
             tokenstream.MoveForward(1);
-            Node value=ParseExpression();
-            Node negation=new Node();
-            negation.Type=Node.NodeType.Negation;
-            negation.Branches=new List<Node>{value};
-            return negation;
-        }
-        //Parseo de un número
-        if (tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.number)
-        {
-            double value = (Convert.ToDouble(tokenstream.tokens[tokenstream.Position()].Value,CultureInfo.InvariantCulture));
-            Node temp=new Node();
-            temp.Type=Node.NodeType.Number;
-            temp.NodeExpression=value;
+
+        Expression condition = ParseExpression();
+
+        if (tokenstream.tokens[tokenstream.Position()].Tipo != Token.Type.right_bracket)
+            errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "')' symbol"));
+        else
             tokenstream.MoveForward(1);
-            return temp;
-        }
-        //Texto
-        else if (tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.text)
+
+        Expression body = ParseExpression();
+
+        return new WhileExpression(condition, body);
+    }
+
+    public Expression Block()
+    {
+        tokenstream.MoveForward(1);
+        List<Expression> expressions = new List<Expression>();
+
+        while (tokenstream.Position() < tokens.Count && !(tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.symbol && tokenstream.tokens[tokenstream.Position()].Value == "}"))
         {
-           string value=(tokenstream.tokens[tokenstream.Position()].Value);
-           Node temp=new Node();
-           temp.Type=Node.NodeType.Text;
-           temp.NodeExpression=value;
-           tokenstream.MoveForward(1);
-           return temp;
+            expressions.Add(ParseExpression());
+            if (tokenstream.Position() < tokens.Count && tokenstream.tokens[tokenstream.Position()].Value == ";")
+                tokenstream.MoveForward(1);
         }
-        //Se parsean a continuación los valores y funciones predeterminadas
-        else if (tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.PI)
-        {
-            Node temp=new Node();
-            temp.Type=Node.NodeType.PI;
-            temp.NodeExpression="PI";
+
+        if (tokenstream.Position() < tokens.Count && tokenstream.tokens[tokenstream.Position()].Value == "}")
             tokenstream.MoveForward(1);
-            return temp;
-        }
-        else if (tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.E)
+
+        return new BlockExpression(expressions);
+    }
+
+    public Expression Let_In()
+    {
+        tokenstream.MoveForward(1);
+        List<(string, Expression)> assignments = new List<(string, Expression)>();
+
+        bool first = true;
+        while (tokenstream.Position() < tokens.Count)
         {
-            Node temp=new Node();
-            temp.Type=Node.NodeType.E;
-            temp.NodeExpression="E";
-            tokenstream.MoveForward(1);
-            return temp;
-        }
-        else if (tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.rand)
-        {
-            if (tokenstream.tokens[tokenstream.Position()+1].Tipo!=Token.Type.left_bracket)
+            if (!first)
+                tokenstream.MoveForward(1);
+            first = false;
+
+            if (tokenstream.Position() >= tokens.Count ||
+                (tokenstream.tokens[tokenstream.Position()].Tipo != Token.Type.identifier))
             {
-                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'(' symbol after rand function)"));
+                errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "variable identifier"));
+                break;
             }
-            else tokenstream.MoveForward(1);
-            if (tokenstream.tokens[tokenstream.Position()+1].Tipo!=Token.Type.right_bracket)
+
+            string varName = tokenstream.tokens[tokenstream.Position()].Value;
+
+            // Check if it's a function call, not a variable
+            if (tokenstream.Position() + 1 < tokens.Count && tokenstream.tokens[tokenstream.Position() + 1].Tipo == Token.Type.left_bracket)
             {
-                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"')' symbol to close rand function)"));
+                errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "variable identifier"));
+                break;
             }
-            else tokenstream.MoveForward(1);
-            Node temp=new Node();
-            temp.Type=Node.NodeType.Rand;
-            temp.NodeExpression="rand";
+
             tokenstream.MoveForward(1);
-            return temp;
-        }
-        else if (tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.boolean)
-        {
-            if (tokenstream.tokens[tokenstream.Position()].Value=="false")
+
+            if (tokenstream.tokens[tokenstream.Position()].Value != "=")
             {
-               bool value = (Convert.ToBoolean(tokenstream.tokens[tokenstream.Position()].Value));
-               Node temp=new Node();
-               temp.Type=Node.NodeType.False;
-               temp.NodeExpression=value;
-               tokenstream.MoveForward(1);
-               return temp;
+                errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "'=' symbol"));
+                break;
             }
+            tokenstream.MoveForward(1);
+
+            Expression value = ParseExpression();
+
+            assignments.Add((varName, value));
+
+            if (tokenstream.Position() < tokens.Count && tokenstream.tokens[tokenstream.Position()].Value == ",")
+                continue;
             else
-            {
-                bool value = (Convert.ToBoolean(tokenstream.tokens[tokenstream.Position()].Value));
-               Node temp=new Node();
-               temp.Type=Node.NodeType.True;
-               temp.NodeExpression=value;
-               tokenstream.MoveForward(1);
-               return temp;
-            }
-           
+                break;
         }
-        else if (tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.sin)
+
+        if (tokenstream.Position() >= tokens.Count || tokenstream.tokens[tokenstream.Position()].Value != "in")
+        {
+            errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "'in' keyword"));
+        }
+        else
+            tokenstream.MoveForward(1);
+
+        Expression body = ParseExpression();
+        return new LetExpression(assignments, body);
+    }
+
+    public Expression Unit()
+    {
+        if (tokenstream.Position() >= tokenstream.tokens.Count)
+        {
+            errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "more tokens, end of expression"));
+            return new LiteralExpression(0.0);
+        }
+
+        Token current = tokenstream.tokens[tokenstream.Position()];
+
+        if (current.Tipo == Token.Type.left_bracket)
         {
             tokenstream.MoveForward(1);
-            if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.left_bracket)
-            {
-                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'(' symbol"));
-            }
-            else tokenstream.MoveForward(1);
-            Node value= ParseOP();
-            if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.right_bracket)
-            {
-                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"')' symbol"));
-            }
-            else tokenstream.MoveForward(1);
-            Node temp=new Node();
-            temp.Type=Node.NodeType.Sin;
-            temp.Branches=new List<Node>{value};
-            return temp;
-
-        }
-        else if (tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.cos)
-        {
-            tokenstream.MoveForward(1);
-            if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.left_bracket)
-            {
-                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'(' symbol"));
-            }
-            else tokenstream.MoveForward(1);
-            Node value= ParseOP();
-            if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.right_bracket)
-            {
-                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"')' symbol"));
-            }
-            else tokenstream.MoveForward(1);
-            Node temp=new Node();
-            temp.Type=Node.NodeType.Cos;
-            temp.Branches=new List<Node>{value};
-            return temp;
-
-        }
-        else if (tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.sqrt)
-        {
-            tokenstream.MoveForward(1);
-            if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.left_bracket)
-            {
-                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'(' symbol"));
-            }
-            else tokenstream.MoveForward(1);
-            Node value= ParseOP();
-            if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.right_bracket)
-            {
-                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"')' symbol"));
-            }
-            else tokenstream.MoveForward(1);
-            Node temp=new Node();
-            temp.Type=Node.NodeType.Sqrt;
-            temp.Branches=new List<Node>{value};
-            return temp;
-
-        }
-        else if (tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.exp)
-        {
-            tokenstream.MoveForward(1);
-            if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.left_bracket)
-            {
-                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'(' symbol"));
-            }
-            else tokenstream.MoveForward(1);
-            Node value= ParseOP();
-            if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.right_bracket)
-            {
-                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"')' symbol"));
-            }
-            else tokenstream.MoveForward(1);
-            Node temp=new Node();
-            temp.Type=Node.NodeType.Exp;
-            temp.Branches=new List<Node>{value};
-            return temp;
-
-        }
-        else if (tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.log)
-        {
-            tokenstream.MoveForward(1);
-            if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.left_bracket)
-            {
-                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"'(' symbol"));
-            }
-            else tokenstream.MoveForward(1);
-            Node base_of_log= ParseOP();
-            if (tokenstream.tokens[tokenstream.Position()].Value!=",")
-            {
-                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"',' symbol "));
-            }
-            else tokenstream.MoveForward(1);
-            Node number = ParseOP();
-            if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.right_bracket)
-            {
-                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"')' symbol"));
-            }
-            else tokenstream.MoveForward(1);
-            Node temp=new Node();
-            temp.Type=Node.NodeType.Log;
-            temp.Branches=new List<Node>{base_of_log,number};
-            return temp;
-
-        }
-        //Se parsea un identificar(se identifica si es nombre de función o de variable)
-        else if (tokenstream.tokens[tokenstream.Position()].Tipo==Token.Type.identifier)
-        {
-            if (tokenstream.tokens[tokenstream.Position()+1].Tipo==Token.Type.left_bracket)
-            {
-                string name = tokenstream.tokens[tokenstream.Position()].Value;
+            Expression subnode = ParseExpression();
+            if (tokenstream.Position() < tokenstream.tokens.Count && tokenstream.tokens[tokenstream.Position()].Tipo != Token.Type.right_bracket)
+                errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "')' symbol"));
+            else
                 tokenstream.MoveForward(1);
-                Node namedfunction=new Node();
-                namedfunction.Type=Node.NodeType.Declared_FucName;
-                namedfunction.NodeExpression=name;
+            return subnode;
+        }
+
+        if (current.Value == "!")
+        {
+            tokenstream.MoveForward(1);
+            return new UnaryExpression(ParseExpression());
+        }
+
+        if (tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.number)
+        {
+            double value = Convert.ToDouble(tokenstream.tokens[tokenstream.Position()].Value, CultureInfo.InvariantCulture);
+            tokenstream.MoveForward(1);
+            return new LiteralExpression(value);
+        }
+
+        if (tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.text)
+        {
+            string value = tokenstream.tokens[tokenstream.Position()].Value;
+            tokenstream.MoveForward(1);
+            return new LiteralExpression(value);
+        }
+
+        if (tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.PI)
+        {
+            tokenstream.MoveForward(1);
+            return new BuiltinCall("PI", new List<Expression>());
+        }
+
+        if (tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.E)
+        {
+            tokenstream.MoveForward(1);
+            return new BuiltinCall("E", new List<Expression>());
+        }
+
+        if (tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.rand)
+        {
+            tokenstream.MoveForward(1);
+            if (tokenstream.tokens[tokenstream.Position()].Tipo != Token.Type.left_bracket)
+                errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "'(' symbol after rand function"));
+            else
                 tokenstream.MoveForward(1);
-                Node parameters =new Node();
-                parameters.Type=Node.NodeType.parameters;
-                if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.right_bracket)
+
+            if (tokenstream.tokens[tokenstream.Position()].Tipo != Token.Type.right_bracket)
+                errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "')' symbol to close rand function"));
+            else
+                tokenstream.MoveForward(1);
+
+            return new BuiltinCall("rand", new List<Expression>());
+        }
+
+        if (tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.boolean)
+        {
+            bool value = tokenstream.tokens[tokenstream.Position()].Value == "true";
+            tokenstream.MoveForward(1);
+            return new LiteralExpression(value);
+        }
+
+        // Built-in functions with one argument
+        if (tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.sin)
+        {
+            tokenstream.MoveForward(1);
+            ExpectAndAdvance(Token.Type.left_bracket, "'(' symbol");
+            Expression arg = ParseOP();
+            ExpectAndAdvance(Token.Type.right_bracket, "')' symbol");
+            return new BuiltinCall("sin", new List<Expression> { arg });
+        }
+
+        if (tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.cos)
+        {
+            tokenstream.MoveForward(1);
+            ExpectAndAdvance(Token.Type.left_bracket, "'(' symbol");
+            Expression arg = ParseOP();
+            ExpectAndAdvance(Token.Type.right_bracket, "')' symbol");
+            return new BuiltinCall("cos", new List<Expression> { arg });
+        }
+
+        if (tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.sqrt)
+        {
+            tokenstream.MoveForward(1);
+            ExpectAndAdvance(Token.Type.left_bracket, "'(' symbol");
+            Expression arg = ParseOP();
+            ExpectAndAdvance(Token.Type.right_bracket, "')' symbol");
+            return new BuiltinCall("sqrt", new List<Expression> { arg });
+        }
+
+        if (tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.exp)
+        {
+            tokenstream.MoveForward(1);
+            ExpectAndAdvance(Token.Type.left_bracket, "'(' symbol");
+            Expression arg = ParseOP();
+            ExpectAndAdvance(Token.Type.right_bracket, "')' symbol");
+            return new BuiltinCall("exp", new List<Expression> { arg });
+        }
+
+        if (tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.log)
+        {
+            tokenstream.MoveForward(1);
+            ExpectAndAdvance(Token.Type.left_bracket, "'(' symbol");
+            Expression baseOfLog = ParseOP();
+            if (tokenstream.tokens[tokenstream.Position()].Value != ",")
+                errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "',' symbol"));
+            else
+                tokenstream.MoveForward(1);
+            Expression number = ParseOP();
+            ExpectAndAdvance(Token.Type.right_bracket, "')' symbol");
+            return new BuiltinCall("log", new List<Expression> { baseOfLog, number });
+        }
+
+        if (tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.identifier)
+        {
+            string name = tokenstream.tokens[tokenstream.Position()].Value;
+
+            if (tokenstream.Position() + 1 < tokens.Count && tokenstream.tokens[tokenstream.Position() + 1].Tipo == Token.Type.left_bracket)
+            {
+                tokenstream.MoveForward(1);
+                tokenstream.MoveForward(1);
+
+                List<Expression> args = new List<Expression>();
+                if (tokenstream.Position() < tokens.Count && tokenstream.tokens[tokenstream.Position()].Tipo != Token.Type.right_bracket)
                 {
                     do
                     {
-                        Node name_of_parm=new Node();
-                        name_of_parm.Type=Node.NodeType.ParName;
-                        object val = ParseExpression();
-                        name_of_parm.NodeExpression=val;
-                        parameters.Branches.Add(name_of_parm);
-                        if (tokenstream.tokens[tokenstream.Position()].Value==",")
-                        {
+                        args.Add(ParseExpression());
+                        if (tokenstream.Position() < tokens.Count && tokenstream.tokens[tokenstream.Position()].Value == ",")
                             tokenstream.MoveForward(1);
-                        }
-                    } while (tokenstream.tokens[tokenstream.Position()-1].Value==",");  
+                    } while (tokenstream.Position() > 0 && tokenstream.Position() < tokens.Count &&
+                             tokenstream.tokens[Math.Min(tokenstream.Position(), tokens.Count - 1)].Value == ",");
                 }
-                if (tokenstream.tokens[tokenstream.Position()].Tipo!=Token.Type.right_bracket)
-                    {
-                        errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Expected,"')' symbol"));
-                    }
-                    else tokenstream.MoveForward(1);
-                    Node newvalue = new Node();
-                    newvalue.Type=Node.NodeType.Declared_Fuc;
-                    newvalue.Branches=new List<Node>{namedfunction,parameters};
-                    return newvalue;
+
+                if (tokenstream.Position() >= tokens.Count || tokenstream.tokens[tokenstream.Position()].Tipo != Token.Type.right_bracket)
+                    errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "')' symbol"));
+                else
+                    tokenstream.MoveForward(1);
+
+                return new FunctionCall(name, args);
             }
-            object value =tokenstream.tokens[tokenstream.Position()].Value;
-                Node final =new Node();
-                final.Type=Node.NodeType.Var;
-                final.NodeExpression=value;
-                tokenstream.MoveForward(1);
-                return final;
+
+            tokenstream.MoveForward(1);
+            return new VariableExpression(name);
         }
-        else if (tokenstream.Position()<tokenstream.tokens.Count && tokenstream.tokens[tokenstream.Position()].Value=="let")
-        {
+
+        if (tokenstream.Position() < tokenstream.tokens.Count && tokenstream.tokens[tokenstream.Position()].Value == "let")
             return Let_In();
-        }
-        //Se parsea una expresión vacía
-        else if(tokenstream.tokens[tokenstream.Position()]==null)
+
+        if (tokenstream.Position() < tokenstream.tokens.Count && tokenstream.tokens[tokenstream.Position()].Value == "while")
+            return While();
+
+        if (tokenstream.Position() < tokenstream.tokens.Count && tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.symbol && tokenstream.tokens[tokenstream.Position()].Value == "{")
+            return Block();
+
+        if (tokenstream.Position() >= tokenstream.tokens.Count || tokenstream.tokens[tokenstream.Position()] == null)
+            return new LiteralExpression(0.0);
+
+        errors.Add(new Error(Error.TypeError.Semantic_Error, Error.ErrorCode.Invalid, "expression"));
+        return new LiteralExpression(0.0);
+    }
+
+    public Expression ParsePower()
+    {
+        Expression left = Unit();
+        while (tokenstream.Position() < tokenstream.tokens.Count && tokenstream.tokens[tokenstream.Position()].Value == "^")
         {
-            return new Node();
+            tokenstream.MoveForward(1);
+            Expression right = ParsePower();
+            left = new Power(left, right);
         }
-        //Si no coincide con alguno de los anteriores es un valor inválido
+        return left;
+    }
+
+    public Expression ParseMul_O_Div()
+    {
+        Expression left = ParsePower();
+        while (tokenstream.Position() < tokenstream.tokens.Count &&
+               (tokenstream.tokens[tokenstream.Position()].Value == "*" ||
+                tokenstream.tokens[tokenstream.Position()].Value == "/" ||
+                tokenstream.tokens[tokenstream.Position()].Value == "%"))
+        {
+            Token.Type op = tokenstream.tokens[tokenstream.Position()].Tipo;
+            tokenstream.MoveForward(1);
+            Expression right = ParseMul_O_Div();
+
+            left = op switch
+            {
+                Token.Type.multiplication => new Multiplication(left, right),
+                Token.Type.module => new Module(left, right),
+                _ => new Division(left, right)
+            };
+        }
+        return left;
+    }
+
+    public Expression ParseSum_O_Sub()
+    {
+        Expression left = ParseMul_O_Div();
+        while (tokenstream.Position() < tokenstream.tokens.Count &&
+               (tokenstream.tokens[tokenstream.Position()].Value == "+" ||
+                tokenstream.tokens[tokenstream.Position()].Value == "-"))
+        {
+            Token.Type op = tokenstream.tokens[tokenstream.Position()].Tipo;
+            tokenstream.MoveForward(1);
+            Expression right = ParseSum_O_Sub();
+
+            left = op == Token.Type.sum ? new Sum(left, right) : new Subtraction(left, right);
+        }
+        return left;
+    }
+
+    public Expression ParseComparation()
+    {
+        Expression left = ParseSum_O_Sub();
+        while (tokenstream.Position() < tokenstream.tokens.Count &&
+               (tokenstream.tokens[tokenstream.Position()].Value == "<" ||
+                tokenstream.tokens[tokenstream.Position()].Value == ">" ||
+                tokenstream.tokens[tokenstream.Position()].Value == ">=" ||
+                tokenstream.tokens[tokenstream.Position()].Value == "<=" ||
+                tokenstream.tokens[tokenstream.Position()].Value == "==" ||
+                tokenstream.tokens[tokenstream.Position()].Value == "!="))
+        {
+            Token.Type op = tokenstream.tokens[tokenstream.Position()].Tipo;
+            tokenstream.MoveForward(1);
+            Expression right = ParseSum_O_Sub();
+
+            left = op switch
+            {
+                Token.Type.minor => new Minor(left, right),
+                Token.Type.major => new Major(left, right),
+                Token.Type.equal_major => new EqualMajor(left, right),
+                Token.Type.equal_minor => new EqualMinor(left, right),
+                Token.Type.equal => new Equal(left, right),
+                _ => new Different(left, right)
+            };
+        }
+        return left;
+    }
+
+    public Expression ParseOr_O_And()
+    {
+        Expression left = ParseComparation();
+        while (tokenstream.Position() < tokenstream.tokens.Count &&
+               (tokenstream.tokens[tokenstream.Position()].Value == "|" ||
+                tokenstream.tokens[tokenstream.Position()].Value == "&"))
+        {
+            Token.Type op = tokenstream.tokens[tokenstream.Position()].Tipo;
+            tokenstream.MoveForward(1);
+            Expression right = ParseOr_O_And();
+
+            left = op == Token.Type.Or ? new Or(left, right) : new And(left, right);
+        }
+        return left;
+    }
+
+    public Expression ParseOP()
+    {
+        Expression left = ParseOr_O_And();
+        while (tokenstream.Position() < tokenstream.tokens.Count && tokenstream.tokens[tokenstream.Position()].Value == "@")
+        {
+            tokenstream.MoveForward(1);
+            Expression right = ParseOP();
+            left = new Concatenation(left, right);
+        }
+        return left;
+    }
+
+    private void ExpectAndAdvance(Token.Type type, string errorMsg)
+    {
+        if (tokenstream.Position() < tokenstream.tokens.Count && tokenstream.tokens[tokenstream.Position()].Tipo == type)
+            tokenstream.MoveForward(1);
         else
-        {
-            Node temp = new Node();
-            temp.NodeExpression=new Error(Error.TypeError.Semantic_Error,Error.ErrorCode.Invalid,"expression");
-            return temp;
-        }
-       
+            errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, errorMsg));
     }
-    
-    //Parser de la operación potencia(mayor nivel de prioridad,accede directamente a Unit)
-    public Node ParsePower()
-    {
-        Node left =Unit();
-        Node pow=new Node();
-        while (tokenstream.Position()<tokenstream.tokens.Count&&tokenstream.tokens[tokenstream.Position()].Value=="^")
-        {
-            
-            Token.Type whatkind = tokenstream.tokens[tokenstream.Position()].Tipo;
-            tokenstream.MoveForward(1);
-            Node right =ParsePower();
-            if (right.NodeExpression is Error)
-            {
-                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Invalid,"expression"));
-            }
-            
-            pow.Type=Node.NodeType.Pow;
-            pow.Branches=new List<Node>{left,right};
-        }
-        if (pow.Type!=Node.NodeType.Indefined)
-        {
-            return pow;
-        }
-        else return left;
-    }
-    //Parser de las operaciones multiplicación y división(penúltimo nivel de prioridad)
-    public Node ParseMul_O_Div()
-    {
-        Node left =ParsePower();
-        Node pro=new Node();
-        while (tokenstream.Position()<tokenstream.tokens.Count&&(tokenstream.tokens[tokenstream.Position()].Value=="*"||tokenstream.tokens[tokenstream.Position()].Value=="/"||tokenstream.tokens[tokenstream.Position()].Value=="%"))
-        {
-            
-            Token.Type whatkind = tokenstream.tokens[tokenstream.Position()].Tipo;
-            tokenstream.MoveForward(1);
-            Node right =ParseMul_O_Div();
-            if (right.NodeExpression is Error)
-            {
-                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Invalid,"expression"));
-            }
-            
-            if (whatkind==Token.Type.multiplication)
-            {
-               pro.Type=Node.NodeType.Mul; 
-            }
-            else if (whatkind==Token.Type.module)
-            {
-                pro.Type=Node.NodeType.Mod;
-            }
-            else pro.Type=Node.NodeType.Div;
-            
-            pro.Branches=new List<Node>{left,right};
-            Console.WriteLine(tokenstream.tokens[tokenstream.Position()].Value);
-
-        }
-        if (pro.Type!=Node.NodeType.Indefined)
-        {
-            return pro;
-        }
-        else return left;
-    }
-    //Parser de las operaciones suma y resta(nivel 4)
-    public Node ParseSum_O_Sub()
-    {
-        Node left =ParseMul_O_Div();
-        Node sus=new Node();
-        while (tokenstream.Position()<tokenstream.tokens.Count&&(tokenstream.tokens[tokenstream.Position()].Value=="+"||tokenstream.tokens[tokenstream.Position()].Value=="-"))
-        {   
-            Token.Type whatkind = tokenstream.tokens[tokenstream.Position()].Tipo;
-            tokenstream.MoveForward(1);
-            Node right =ParseSum_O_Sub();
-            if (right.NodeExpression is Error)
-            {
-                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Invalid,"expression"));
-            }
-            
-            if (whatkind==Token.Type.sum)
-            {
-               sus.Type=Node.NodeType.Sum; 
-               sus.NodeExpression="+";
-            }
-            else sus.Type=Node.NodeType.Sub;
-            sus.NodeExpression="-";
-            sus.Branches=new List<Node>{left,right};
-        }
-        if (sus.Type!=Node.NodeType.Indefined)
-        {
-            return sus;
-        }
-        else return left;
-    }
-//Parser de operaciones de comparación(nivel 3,pues a diferencia de & y | sus miembros pueden y deben en algunos casos ser números)
-    public Node ParseComparation()
-    {
-        Node left =ParseSum_O_Sub();
-        Node com=new Node();
-        while (tokenstream.Position()<tokenstream.tokens.Count&&(tokenstream.tokens[tokenstream.Position()].Value=="<"||tokenstream.tokens[tokenstream.Position()].Value==">"||tokenstream.tokens[tokenstream.Position()].Value==">="||tokenstream.tokens[tokenstream.Position()].Value=="<="||tokenstream.tokens[tokenstream.Position()].Value=="=="||tokenstream.tokens[tokenstream.Position()].Value=="!="))
-        {
-
-            Token.Type whatkind = tokenstream.tokens[tokenstream.Position()].Tipo;
-            tokenstream.MoveForward(1);
-            Node right =ParseSum_O_Sub();
-            if (right.NodeExpression is Error)
-            {
-                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Invalid,"expression"));
-            }
-            if (whatkind==Token.Type.minor)
-            {
-                com.Type=Node.NodeType.Minor;
-            }
-            else if (whatkind==Token.Type.major)
-            {
-                com.Type=Node.NodeType.Major;
-            }
-            else if (whatkind==Token.Type.equal_major)
-            {
-                com.Type=Node.NodeType.Equal_Major;
-            }
-            else if (whatkind==Token.Type.equal_minor)
-            {
-                com.Type=Node.NodeType.Equal_Minor;
-            }
-            else if (whatkind==Token.Type.equal)
-            {
-                com.Type=Node.NodeType.Equal;
-            }
-            else com.Type=Node.NodeType.Diferent;
-            com.Branches=new List<Node>{left,right};
-        }
-        if (com.Type!=Node.NodeType.Indefined)
-        {
-            return com;
-        }
-        else return left;
-    }
-    //Parser de las operaciones & y |(nivel 2)
-    public Node ParseOr_O_And()
-    {
-        Node left =ParseComparation();
-        Node and_or=new Node();
-        while (tokenstream.Position()<tokenstream.tokens.Count&&(tokenstream.tokens[tokenstream.Position()].Value=="|"||tokenstream.tokens[tokenstream.Position()].Value=="&"))
-        {
-
-            Token.Type whatkind = tokenstream.tokens[tokenstream.Position()].Tipo;
-            tokenstream.MoveForward(1);
-            Node right =ParseOr_O_And();
-            if (right.NodeExpression is Error)
-            {
-                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Invalid,"expression"));
-            }
-            
-            if (whatkind==Token.Type.Or)
-            {
-                and_or.Type=Node.NodeType.Or;
-            }
-            else and_or.Type=Node.NodeType.And;
-            and_or.Branches=new List<Node>{left,right};
-        }
-        if (and_or.Type!=Node.NodeType.Indefined)
-        {
-            return and_or;
-        }
-        else return left;
-    }
-    //Parser principal de las operaciones, manda a parsear una concatenación
-    public Node ParseOP()
-    { 
-        Node left =ParseOr_O_And();
-        Node exp=new Node();
-        while (tokenstream.Position()<tokenstream.tokens.Count&&tokenstream.tokens[tokenstream.Position()].Value=="@")
-        {   
-            Token.Type whatkind = tokenstream.tokens[tokenstream.Position()].Tipo;
-            tokenstream.MoveForward(1);
-            Node right =ParseOP();
-            if (right.NodeExpression is Error)
-            {
-                errors.Add(new Error(Error.TypeError.Syntactic_Error,Error.ErrorCode.Invalid,"expression"));
-            }
-            
-            exp.Type=Node.NodeType.Concat;
-            exp.Branches=new List<Node>{left,right};
-        }
-        if (exp.Type!=Node.NodeType.Indefined)
-        {
-            return exp;
-        }
-        else return left;
-    }
-
-
 }

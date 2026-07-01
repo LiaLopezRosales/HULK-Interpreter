@@ -1,20 +1,11 @@
-public class Or:Binary
+public class Or : BinaryExpression
 {
-    public Or()
-    {}
-    public override ExpressionType Type { get => base.Type; set => base.Type = value; }
+    public Or(Expression left, Expression right) : base(left, right) { }
 
-    public override object? Value { get => base.Value; set => base.Value = value; }
-    public override void Evaluate(object left,object right)
+    public override object Evaluate(Scope scope, Context context, List<Error> errors)
     {
-        Value = (bool)left||(bool)right;
-    }
-    public override string ToString()
-    {
-        if (Value==null)
-        {
-            return String.Format("({0}|{1})",Left,Right);
-        }
-        return Value.ToString()!;
+        var l = Left.Evaluate(scope, context, errors);
+        var r = Right.Evaluate(scope, context, errors);
+        return AreBooleans(l, r, errors) ? (bool)l || (bool)r : false;
     }
 }

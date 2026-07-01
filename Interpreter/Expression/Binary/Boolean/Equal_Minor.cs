@@ -1,21 +1,15 @@
 using System.Globalization;
-public class Equal_Minor:Binary
-{
-    public Equal_Minor()
-    {}
-    public override ExpressionType Type { get => Type=ExpressionType.Bool; set => Type=ExpressionType.Bool; }
 
-    public override object? Value { get => base.Value; set => base.Value = value; }
-    public override void Evaluate(object left,object right)
+public class EqualMinor : BinaryExpression
+{
+    public EqualMinor(Expression left, Expression right) : base(left, right) { }
+
+    public override object Evaluate(Scope scope, Context context, List<Error> errors)
     {
-         Value = Convert.ToDouble(left,CultureInfo.InvariantCulture) <= Convert.ToDouble(right,CultureInfo.InvariantCulture);
-    }
-    public override string ToString()
-    {
-        if (Value==null)
-        {
-            return String.Format("({0}<={1})",Left,Right);
-        }
-        return Value.ToString()!;
+        var l = Left.Evaluate(scope, context, errors);
+        var r = Right.Evaluate(scope, context, errors);
+        if (AreNumbers(l, r, errors))
+            return Convert.ToDouble(l, CultureInfo.InvariantCulture) <= Convert.ToDouble(r, CultureInfo.InvariantCulture);
+        return false;
     }
 }

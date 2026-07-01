@@ -1,15 +1,13 @@
-public class Fuction
+public class Function
 {
-   public string Name{get;set;}
-   public Dictionary<string,object> Functions_Arguments{get;set;} 
+    public string Name { get; }
+    public Expression Code { get; }
+    public List<string> Parameters { get; }
 
-   public Node Code{get;set;}
-
-   public Fuction(string name,Node code,Dictionary<string,object> functions_arg)
-   {
-     this.Name=name;
-     this.Code=code;
-     this.Functions_Arguments=functions_arg;
-
-   }
+    public Function(string name, Expression code, List<string> parameters)
+    {
+        Name = name;
+        Code = code;
+        Parameters = parameters;
+    }
 }
