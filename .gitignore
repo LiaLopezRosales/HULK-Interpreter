@@ -1,0 +1,20 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.vs/
+*.DotSettings
+*.nupkg
+**/[Bb]in/
+**/[Oo]bj/
+packages/
+*.nupkg
+
+# IDE
+.vs/
+*.sln.docstates
+
+# OS
+.DS_Store
+Thumbs.db

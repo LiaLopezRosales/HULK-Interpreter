@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
-dotnet build token.csproj
-dotnet run --project token.csproj
+dotnet build HULK-Interpreter.csproj
+dotnet run --project HULK-Interpreter.csproj
 
