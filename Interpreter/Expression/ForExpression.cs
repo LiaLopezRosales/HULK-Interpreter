@@ -24,7 +24,9 @@ public class ForExpression : Expression
             {
                 Scope newScope = new Scope { Parent = scope };
                 newScope.Variables[VariableName] = item;
-                last = Body.Evaluate(newScope, context, errors);
+                try { last = Body.Evaluate(newScope, context, errors); }
+                catch (BreakException) { break; }
+                catch (ContinueException) { continue; }
             }
         }
         else if (iterable is List<object> objList)
@@ -33,7 +35,9 @@ public class ForExpression : Expression
             {
                 Scope newScope = new Scope { Parent = scope };
                 newScope.Variables[VariableName] = item;
-                last = Body.Evaluate(newScope, context, errors);
+                try { last = Body.Evaluate(newScope, context, errors); }
+                catch (BreakException) { break; }
+                catch (ContinueException) { continue; }
             }
         }
         else if (iterable is string s)
@@ -42,7 +46,9 @@ public class ForExpression : Expression
             {
                 Scope newScope = new Scope { Parent = scope };
                 newScope.Variables[VariableName] = (double)ch;
-                last = Body.Evaluate(newScope, context, errors);
+                try { last = Body.Evaluate(newScope, context, errors); }
+                catch (BreakException) { break; }
+                catch (ContinueException) { continue; }
             }
         }
         else

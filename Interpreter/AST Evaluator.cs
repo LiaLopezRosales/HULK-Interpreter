@@ -14,7 +14,19 @@ public class AST_Evaluator
     public object Evaluate(Expression expr)
     {
         Semantic_Errors.Clear();
-        var result = expr.Evaluate(globalScope, context, Semantic_Errors);
-        return result;
+        try
+        {
+            return expr.Evaluate(globalScope, context, Semantic_Errors);
+        }
+        catch (BreakException)
+        {
+            Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error, Error.ErrorCode.Invalid, "break fuera de un ciclo"));
+            return null!;
+        }
+        catch (ContinueException)
+        {
+            Semantic_Errors.Add(new Error(Error.TypeError.Semantic_Error, Error.ErrorCode.Invalid, "continue fuera de un ciclo"));
+            return null!;
+        }
     }
 }

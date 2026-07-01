@@ -15,13 +15,15 @@ public class Tokenizer
         //Se utilizan expresiones regulares para separar en posibles tokenes
         //Identifica como número negativo si el símbolo '-' está justo antes del número sin espacios entre ellos
 
+        // Eliminar comentarios de bloque (/* ... */)
+        code = Regex.Replace(code, @"/\*.*?\*/", "", RegexOptions.Singleline);
         // Eliminar comentarios de una linea (// ...)
         code = Regex.Replace(code, @"//.*", "");
 
         string patronNumeroNegativo = @"-?\d+(\.\d+)?";
         string patronTexto = "\".*?\"";
         string quotes ="\"";
-        string patronPalabras = @"\+|\-|\*|\%|(\<\=)|(\>\=)|(\=\=)|(\!\=)|(\=\>)|(\:\=)|(\|)|(\&)|\/|\^|(\!)|(\@\@)|\@|\,|\(|\)|\{|\}|\<|\>|\=|\;|\:";
+        string patronPalabras = @"\+|\-|\*|\%|(\<\=)|(\>\=)|(\=\=)|(\!\=)|(\=\>)|(\:\=)|(\|)|(\&)|\/|\^|(\!)|(\@\@)|\@|\,|\(|\)|\{|\}|\[|\]|\<|\>|\=|\;|\:";
         string patronIdentificador = @"\b\w*[a-zA-Z]\w*\b";
         string patron = $"{patronTexto}|{quotes}|{patronIdentificador}|{patronNumeroNegativo}|{patronPalabras}";
         MatchCollection matches = Regex.Matches(code, patron);
@@ -30,8 +32,17 @@ public class Tokenizer
         foreach (Match match in matches)
         {
             Token temporal = IdentifyType(match.Value,lexererrors);
+            temporal.SourceIndex = match.Index;
             possibletokens.Add(temporal);
         }
+        // Helper para agregar error lexico con posicion
+        void AddLexError(int index, string msg)
+        {
+            var err = new Error(Error.TypeError.Lexical_Error, Error.ErrorCode.Invalid, msg);
+            (err.Line, err.Col) = PosFromIndex(code, index);
+            lexererrors.Add(err);
+        }
+
         // verificar si hay caracteres no reconocidos entre matches
         int lastEnd = 0;
         foreach (Match m in matches)
@@ -40,14 +51,14 @@ public class Tokenizer
             {
                 string junk = code.Substring(lastEnd, m.Index - lastEnd).Trim();
                 if (junk.Length > 0)
-                    lexererrors.Add(new Error(Error.TypeError.Lexical_Error, Error.ErrorCode.Invalid, $"token no reconocido: '{junk}'"));
+                    AddLexError(lastEnd, $"token no reconocido: '{junk}'");
             }
             lastEnd = m.Index + m.Length;
         }
         // saldo final
         string trailing = code.Substring(lastEnd).Trim();
         if (trailing.Length > 0)
-            lexererrors.Add(new Error(Error.TypeError.Lexical_Error, Error.ErrorCode.Invalid, $"token no reconocido: '{trailing}'"));
+            AddLexError(lastEnd, $"token no reconocido: '{trailing}'");
 
         possibletokens.Add(new Token(Token.Type.EOL, "EOL"));
 
@@ -57,6 +68,17 @@ public class Tokenizer
         }
 
         return possibletokens;
+    }
+
+    public static (int Line, int Col) PosFromIndex(string source, int index)
+    {
+        int line = 1, col = 1;
+        for (int i = 0; i < index && i < source.Length; i++)
+        {
+            if (source[i] == '\n') { line++; col = 1; }
+            else col++;
+        }
+        return (line, col);
     }
 
     public List<Error> Lexic_Errors()
@@ -143,7 +165,7 @@ public class Tokenizer
             token = new Token(Token.Type.power,possibletoken);
     
         }      
-        else if (possibletoken == "let" || possibletoken == "in" || possibletoken == "function" || possibletoken == "while" || possibletoken == "for" || possibletoken == "range")
+        else if (possibletoken == "let" || possibletoken == "in" || possibletoken == "function" || possibletoken == "while" || possibletoken == "for" || possibletoken == "range" || possibletoken == "break" || possibletoken == "continue")
         {
             token = new Token(Token.Type.keyword, possibletoken);
             
@@ -158,7 +180,7 @@ public class Tokenizer
             token = new Token(Token.Type.diferent, possibletoken);
             
         }
-        else if (possibletoken == "," ||  possibletoken == ";" || possibletoken == ":" || possibletoken == "=>" || possibletoken == "=" || possibletoken == "{" || possibletoken == "}")
+        else if (possibletoken == "," ||  possibletoken == ";" || possibletoken == ":" || possibletoken == "=>" || possibletoken == "=" || possibletoken == "{" || possibletoken == "}" || possibletoken == "[" || possibletoken == "]")
         {
             token = new Token(Token.Type.symbol, possibletoken);
             

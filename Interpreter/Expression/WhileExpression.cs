@@ -18,7 +18,12 @@ public class WhileExpression : Expression
             if (cond is bool b)
             {
                 if (!b) break;
-                last = Body.Evaluate(scope, context, errors);
+                try
+                {
+                    last = Body.Evaluate(scope, context, errors);
+                }
+                catch (BreakException) { break; }
+                catch (ContinueException) { continue; }
             }
             else
             {

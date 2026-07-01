@@ -59,7 +59,7 @@ bool ProcessCode(string code)
         return false;
     }
 
-    Parser parse = new Parser(possibletokens);
+    Parser parse = new Parser(possibletokens, code);
     Expression ast = parse.Parse();
 
     if (showAst)
@@ -123,6 +123,7 @@ List<Expression> GetChildren(Expression expr)
     else if (expr is WhileExpression wh) { children.Add(wh.Condition); children.Add(wh.Body); }
     else if (expr is BlockExpression bl) children.AddRange(bl.Expressions);
     else if (expr is AssignmentExpression ae) children.Add(ae.Value);
+    else if (expr is ListExpression li) children.AddRange(li.Elements);
     return children;
 }
 

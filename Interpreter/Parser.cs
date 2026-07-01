@@ -4,14 +4,28 @@ public class Parser
 {
     private TokenStream tokenstream;
     private List<Token> tokens;
+    private string sourceCode;
 
     public List<Error> errors;
 
-    public Parser(List<Token> tokens_expression)
+    public Parser(List<Token> tokens_expression, string sourceCode = "")
     {
         tokenstream = new TokenStream(tokens_expression);
         tokens = tokens_expression;
+        this.sourceCode = sourceCode;
         errors = new List<Error>();
+    }
+
+    private void AddError(Error.TypeError type, Error.ErrorCode code, string msg)
+    {
+        var err = new Error(type, code, msg);
+        if (tokenstream.Position() < tokens.Count)
+        {
+            int idx = tokens[tokenstream.Position()].SourceIndex;
+            if (idx >= 0)
+                (err.Line, err.Col) = Tokenizer.PosFromIndex(sourceCode, idx);
+        }
+        errors.Add(err);
     }
 
     public Expression Parse()
@@ -49,6 +63,16 @@ public class Parser
             return While();
         if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Value == "for")
             return ForLoop();
+        if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Value == "break")
+        {
+            tokenstream.MoveForward(1);
+            return new BreakExpression();
+        }
+        if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Value == "continue")
+        {
+            tokenstream.MoveForward(1);
+            return new ContinueExpression();
+        }
         if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Tipo == Token.Type.symbol && tokens[tokenstream.Position()].Value == "{")
             return Block();
 
@@ -165,15 +189,6 @@ public class Parser
             tokenstream.MoveForward(1);
 
         Expression bodyExpr = ParseExpression();
-
-        if (bodyExpr is not LiteralExpression && bodyExpr is not VariableExpression && bodyExpr is not BinaryExpression && bodyExpr is not UnaryExpression
-            && bodyExpr is not ConditionalExpression && bodyExpr is not LetExpression && bodyExpr is not PrintExpression && bodyExpr is not FunctionCall
-            && bodyExpr is not BuiltinCall && bodyExpr is not WhileExpression && bodyExpr is not Concatenation && bodyExpr is not BlockExpression
-            && bodyExpr is not AssignmentExpression && bodyExpr is not ForExpression)
-        {
-            errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Invalid, "function body"));
-        }
-
         return new FunctionDefinition(name, parameters, bodyExpr);
     }
 
@@ -250,6 +265,30 @@ public class Parser
             tokenstream.MoveForward(1);
 
         return new BlockExpression(expressions);
+    }
+
+    public Expression ListLiteral()
+    {
+        tokenstream.MoveForward(1);
+        List<Expression> elements = new List<Expression>();
+
+        if (tokenstream.Position() < tokens.Count &&
+            !(tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.symbol && tokenstream.tokens[tokenstream.Position()].Value == "]"))
+        {
+            elements.Add(ParseExpression());
+            while (tokenstream.Position() < tokens.Count && tokenstream.tokens[tokenstream.Position()].Value == ",")
+            {
+                tokenstream.MoveForward(1);
+                elements.Add(ParseExpression());
+            }
+        }
+
+        if (tokenstream.Position() < tokens.Count && tokenstream.tokens[tokenstream.Position()].Value == "]")
+            tokenstream.MoveForward(1);
+        else
+            errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "']' symbol"));
+
+        return new ListExpression(elements);
     }
 
     public Expression Let_In()
@@ -396,8 +435,16 @@ public class Parser
             else
                 tokenstream.MoveForward(1);
             Expression end = ParseExpression();
+
+            List<Expression> rangeArgs = new List<Expression> { start, end };
+            if (tokenstream.Position() < tokenstream.tokens.Count && tokenstream.tokens[tokenstream.Position()].Value == ",")
+            {
+                tokenstream.MoveForward(1);
+                rangeArgs.Add(ParseExpression());
+            }
+
             ExpectAndAdvance(Token.Type.right_bracket, "')' symbol");
-            return new BuiltinCall("range", new List<Expression> { start, end });
+            return new BuiltinCall("range", rangeArgs);
         }
 
         if (tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.boolean)
@@ -501,6 +548,9 @@ public class Parser
 
         if (tokenstream.Position() < tokenstream.tokens.Count && tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.symbol && tokenstream.tokens[tokenstream.Position()].Value == "{")
             return Block();
+
+        if (tokenstream.Position() < tokenstream.tokens.Count && tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.symbol && tokenstream.tokens[tokenstream.Position()].Value == "[")
+            return ListLiteral();
 
         if (tokenstream.Position() >= tokenstream.tokens.Count || tokenstream.tokens[tokenstream.Position()] == null)
             return new LiteralExpression(0.0);

@@ -30,9 +30,21 @@ public class BuiltinCall : Expression
                 {
                     double start = Convert.ToDouble(Arguments[0].Evaluate(scope, context, errors), CultureInfo.InvariantCulture);
                     double end = Convert.ToDouble(Arguments[1].Evaluate(scope, context, errors), CultureInfo.InvariantCulture);
+                    double step = Arguments.Count >= 3
+                        ? Convert.ToDouble(Arguments[2].Evaluate(scope, context, errors), CultureInfo.InvariantCulture)
+                        : 1.0;
+                    if (step == 0)
+                    {
+                        errors.Add(new Error(Error.TypeError.Semantic_Error, Error.ErrorCode.Invalid, "range step cannot be zero"));
+                        return new List<double>();
+                    }
                     List<double> result = new List<double>();
-                    for (double i = start; i < end; i++)
-                        result.Add(i);
+                    if (step > 0)
+                        for (double i = start; i < end; i += step)
+                            result.Add(i);
+                    else
+                        for (double i = start; i > end; i += step)
+                            result.Add(i);
                     return result;
                 }
 

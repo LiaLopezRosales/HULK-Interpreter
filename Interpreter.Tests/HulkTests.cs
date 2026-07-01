@@ -16,7 +16,7 @@ public class HulkTests
         if (lexicalErrors.Count > 0)
             throw new Exception($"Lexical error: {string.Join("; ", lexicalErrors)}");
 
-        var parser = new Parser(tokens);
+        var parser = new Parser(tokens, code);
         var ast = parser.Parse();
 
         var syntacticErrors = parser.Syntactic_Errors();
@@ -285,4 +285,35 @@ public class HulkTests
     // ─── Function body with := ────────────────────────────────────
 
     [Fact] public void FuncBody_Assign() => Assert.Equal(5.0, Evaluate("function f(x) => x := 5; f(0);"));
+
+    // ─── range con step ────────────────────────────────────────────
+
+    [Fact] public void Range_Step()       => Assert.Equal(new List<double> { 0, 2, 4 }, Evaluate("range(0, 6, 2);"));
+    [Fact] public void Range_NegStep()    => Assert.Equal(new List<double> { 5, 3, 1 }, Evaluate("range(5, 0, -2);"));
+    [Fact] public void Range_StepOne()    => Assert.Equal(new List<double> { 0, 1, 2 }, Evaluate("range(0, 3, 1);"));
+    [Fact] public void Error_RangeStepZero() => AssertError("range(0, 5, 0);", "step cannot be zero");
+
+    // ─── List literals ─────────────────────────────────────────────
+
+    [Fact] public void List_Empty()       => Assert.Equal(new List<object>(), Evaluate("[];"));
+    [Fact] public void List_Numbers()     => Assert.Equal(new List<object> { 1.0, 2.0, 3.0 }, Evaluate("[1, 2, 3];"));
+    [Fact] public void List_Mixed()       => Assert.Equal(new List<object> { 1.0, true, 3.0 }, Evaluate("[1, true, 3];"));
+    [Fact] public void List_Nested()      => Assert.Single((System.Collections.IEnumerable)Evaluate("[[]];"));
+
+    // ─── Block comments ────────────────────────────────────────────
+
+    [Fact] public void Comment_Block()    => Assert.Equal(5.0, Evaluate("/* bloque */ 5;"));
+    [Fact] public void Comment_BlockMulti() => Assert.Equal(42.0, Evaluate("/* multi\nlinea */ 42;"));
+    [Fact] public void Comment_BlockWithSlash() => Assert.Equal(3.0, Evaluate("/* // no es comentario */ 3;"));
+
+    // ─── Break / Continue ──────────────────────────────────────────
+
+    [Fact] public void Break_While()      => Assert.Equal(3.0, Evaluate("let i = 0 in while (i < 10) { if (i == 3) break; i := i + 1; }"));
+    [Fact] public void Continue_While()   => Assert.Equal(4.0, Evaluate("let i = 0, s = 0 in while (i < 5) { i := i + 1; if (i == 3) continue; s := s + 1; }"));
+    [Fact] public void Break_For()        => Assert.Equal(3.0, Evaluate("let s = 0 in for (x in range(0, 10)) { if (x == 3) break; s := s + 1; }"));
+    [Fact] public void Error_BreakOutsideLoop() => AssertError("break;", "break");
+
+    // ─── Error messages with position ──────────────────────────────
+
+    [Fact] public void Error_PositionLex() => AssertError("2 $ 3;", "linea");
 }
