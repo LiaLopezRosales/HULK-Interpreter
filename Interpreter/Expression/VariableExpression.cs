@@ -9,11 +9,12 @@ public class VariableExpression : Expression
 
     public override object Evaluate(Scope scope, Context context, List<Error> errors)
     {
-        while (scope != null)
+        Scope? current = scope;
+        while (current != null)
         {
-            if (scope.Variables.ContainsKey(Name))
-                return scope.Variables[Name];
-            scope = scope.Parent;
+            if (current.Variables.ContainsKey(Name))
+                return current.Variables[Name];
+            current = current.Parent;
         }
         errors.Add(new Error(Error.TypeError.Semantic_Error, Error.ErrorCode.Invalid, "variable"));
         return null!;

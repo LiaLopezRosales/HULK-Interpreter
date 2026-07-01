@@ -14,12 +14,16 @@ public class Tokenizer
     {
         //Se utilizan expresiones regulares para separar en posibles tokenes
         //Identifica como número negativo si el símbolo '-' está justo antes del número sin espacios entre ellos
+
+        // Eliminar comentarios de una linea (// ...)
+        code = Regex.Replace(code, @"//.*", "");
+
         string patronNumeroNegativo = @"-?\d+(\.\d+)?";
         string patronTexto = "\".*?\"";
         string quotes ="\"";
         string patronPalabras = @"\+|\-|\*|\%|(\<\=)|(\>\=)|(\=\=)|(\!\=)|(\=\>)|(\:\=)|(\|)|(\&)|\/|\^|(\!)|(\@\@)|\@|\,|\(|\)|\{|\}|\<|\>|\=|\;|\:";
         string patronIdentificador = @"\b\w*[a-zA-Z]\w*\b";
-        string patron = $"{patronTexto}|{quotes}|{patronIdentificador}|{patronNumeroNegativo}|{patronPalabras} ";
+        string patron = $"{patronTexto}|{quotes}|{patronIdentificador}|{patronNumeroNegativo}|{patronPalabras}";
         MatchCollection matches = Regex.Matches(code, patron);
         List<Token> possibletokens = new List<Token>();
         //Cada coincidencia obtenida se identifica y se añade su token correspondiente

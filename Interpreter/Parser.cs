@@ -47,6 +47,8 @@ public class Parser
             return Function();
         if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Value == "while")
             return While();
+        if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Value == "for")
+            return ForLoop();
         if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Tipo == Token.Type.symbol && tokens[tokenstream.Position()].Value == "{")
             return Block();
 
@@ -113,7 +115,6 @@ public class Parser
         }
         else if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Value == "elif")
         {
-            tokenstream.MoveForward(1);
             elsePart = IF_ElSE();
         }
 
@@ -167,7 +168,8 @@ public class Parser
 
         if (bodyExpr is not LiteralExpression && bodyExpr is not VariableExpression && bodyExpr is not BinaryExpression && bodyExpr is not UnaryExpression
             && bodyExpr is not ConditionalExpression && bodyExpr is not LetExpression && bodyExpr is not PrintExpression && bodyExpr is not FunctionCall
-            && bodyExpr is not BuiltinCall && bodyExpr is not WhileExpression && bodyExpr is not Concatenation && bodyExpr is not BlockExpression)
+            && bodyExpr is not BuiltinCall && bodyExpr is not WhileExpression && bodyExpr is not Concatenation && bodyExpr is not BlockExpression
+            && bodyExpr is not AssignmentExpression && bodyExpr is not ForExpression)
         {
             errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Invalid, "function body"));
         }
@@ -194,6 +196,39 @@ public class Parser
         Expression body = ParseExpression();
 
         return new WhileExpression(condition, body);
+    }
+
+    public Expression ForLoop()
+    {
+        tokenstream.MoveForward(1);
+
+        if (tokenstream.tokens[tokenstream.Position()].Tipo != Token.Type.left_bracket)
+            errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "'(' symbol"));
+        else
+            tokenstream.MoveForward(1);
+
+        if (tokenstream.tokens[tokenstream.Position()].Tipo != Token.Type.identifier)
+            errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "variable identifier"));
+        else
+            tokenstream.MoveForward(1);
+
+        string varName = tokenstream.tokens[tokenstream.Position() - 1].Value;
+
+        if (tokenstream.tokens[tokenstream.Position()].Value != "in")
+            errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "'in' keyword"));
+        else
+            tokenstream.MoveForward(1);
+
+        Expression iterable = ParseExpression();
+
+        if (tokenstream.tokens[tokenstream.Position()].Tipo != Token.Type.right_bracket)
+            errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "')' symbol"));
+        else
+            tokenstream.MoveForward(1);
+
+        Expression body = ParseExpression();
+
+        return new ForExpression(varName, iterable, body);
     }
 
     public Expression Block()
@@ -300,6 +335,13 @@ public class Parser
         {
             tokenstream.MoveForward(1);
             return new UnaryExpression(ParseExpression());
+        }
+
+        if (current.Tipo == Token.Type.substraction)
+        {
+            tokenstream.MoveForward(1);
+            Expression operand = Unit();
+            return new Subtraction(new LiteralExpression(0.0), operand);
         }
 
         if (tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.number)
@@ -453,6 +495,9 @@ public class Parser
 
         if (tokenstream.Position() < tokenstream.tokens.Count && tokenstream.tokens[tokenstream.Position()].Value == "while")
             return While();
+
+        if (tokenstream.Position() < tokenstream.tokens.Count && tokenstream.tokens[tokenstream.Position()].Value == "for")
+            return ForLoop();
 
         if (tokenstream.Position() < tokenstream.tokens.Count && tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.symbol && tokenstream.tokens[tokenstream.Position()].Value == "{")
             return Block();

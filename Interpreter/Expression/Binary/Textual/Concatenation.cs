@@ -8,6 +8,16 @@ public class Concatenation : BinaryExpression
     {
         var l = Left.Evaluate(scope, context, errors);
         var r = Right.Evaluate(scope, context, errors);
-        return $"{l}{r}";
+
+        string ls = Convert.ToString(l, CultureInfo.InvariantCulture) ?? "";
+        string rs = Convert.ToString(r, CultureInfo.InvariantCulture) ?? "";
+
+        // Strip surrounding quotes from string literal operands
+        if (ls.Length >= 2 && ls[0] == '"' && ls[^1] == '"')
+            ls = ls[1..^1];
+        if (rs.Length >= 2 && rs[0] == '"' && rs[^1] == '"')
+            rs = rs[1..^1];
+
+        return $"\"{ls}{rs}\"";
     }
 }
