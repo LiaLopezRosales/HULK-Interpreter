@@ -263,7 +263,17 @@ public class HulkTests
 
     // ─── For con string ───────────────────────────────────────────
 
-    [Fact] public void For_String() => Assert.Equal(3.0, Evaluate("let n = 0 in for (c in \"A\") n := n + 1;"));
+    [Fact] public void For_String_CountChars() => Assert.Equal(5.0, Evaluate("let n = 0 in for (c in \"ABC\") n := n + 1;"));
+    [Fact] public void For_String_SumValues()
+    {
+        // "ABC" se almacena con comillas: 5 chars (34+65+66+67+34 = 266)
+        Assert.Equal(266.0, Evaluate("let s = 0 in for (c in \"ABC\") s := s + c;"));
+    }
+    [Fact] public void For_String_SingleChar()
+    {
+        // "A" se almacena con comillas: 3 chars (34+65+34 = 133)
+        Assert.Equal(133.0, Evaluate("let s = 0 in for (c in \"A\") s := s + c;"));
+    }
 
     // ─── range() edge cases ───────────────────────────────────────
 
