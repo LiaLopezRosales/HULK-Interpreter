@@ -7,6 +7,10 @@
     <Nullable>enable</Nullable>
     <AssemblyName>HULK-Interpreter</AssemblyName>
     <RootNamespace>HULK_Interpreter</RootNamespace>
+    <VersionPrefix>1.1.0</VersionPrefix>
+    <Description>Interprete del lenguaje HULK</Description>
+    <Authors>LiaLopezRosales</Authors>
+    <RepositoryUrl>https://github.com/LiaLopezRosales/HULK-Interpreter</RepositoryUrl>
   </PropertyGroup>
 
 </Project>

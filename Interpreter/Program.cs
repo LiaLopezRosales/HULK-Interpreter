@@ -8,6 +8,8 @@ foreach (string arg in args)
 {
     if (arg == "--ast") showAst = true;
     else if (arg == "--tokens") showTokens = true;
+    else if (arg is "--help" or "-h") { ShowHelp(); return; }
+    else if (arg is "--version" or "-v") { ShowVersion(); return; }
     else if (!arg.StartsWith("--")) filePath = arg;
 }
 
@@ -125,6 +127,30 @@ List<Expression> GetChildren(Expression expr)
     else if (expr is AssignmentExpression ae) children.Add(ae.Value);
     else if (expr is ListExpression li) children.AddRange(li.Elements);
     return children;
+}
+
+void ShowHelp()
+{
+    Console.WriteLine($"HULK Interpreter v{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.1.0"}");
+    Console.WriteLine();
+    Console.WriteLine("Uso: dotnet run --project Interpreter -- [opciones] [archivo.hulk]");
+    Console.WriteLine();
+    Console.WriteLine("Opciones:");
+    Console.WriteLine("  --help, -h        Muestra esta ayuda");
+    Console.WriteLine("  --version, -v     Muestra la version");
+    Console.WriteLine("  --ast             Muestra el AST despues de evaluar");
+    Console.WriteLine("  --tokens          Muestra los tokens generados");
+    Console.WriteLine();
+    Console.WriteLine("Ejemplos:");
+    Console.WriteLine("  dotnet run --project Interpreter");
+    Console.WriteLine("  dotnet run --project Interpreter -- programa.hulk");
+    Console.WriteLine("  dotnet run --project Interpreter -- --ast --tokens programa.hulk");
+}
+
+void ShowVersion()
+{
+    var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0";
+    Console.WriteLine($"HULK Interpreter {version}");
 }
 
 // ─── File mode ──────────────────────────────────
