@@ -130,12 +130,12 @@ public class Tokenizer
             token = new Token(Token.Type.power,possibletoken);
     
         }      
-        else if (possibletoken == "let" || possibletoken == "in" || possibletoken == "function")
+        else if (possibletoken == "let" || possibletoken == "in" || possibletoken == "function" || possibletoken == "while" || possibletoken == "for")
         {
             token = new Token(Token.Type.keyword, possibletoken);
             
         }
-        else if (possibletoken == "if" || possibletoken == "else")
+        else if (possibletoken == "if" || possibletoken == "else" || possibletoken == "elif")
         {
             token = new Token(Token.Type.conditional, possibletoken);
             
@@ -145,7 +145,7 @@ public class Tokenizer
             token = new Token(Token.Type.diferent, possibletoken);
             
         }
-        else if (possibletoken == "," ||  possibletoken == ";" || possibletoken == ":" || possibletoken == "=>" || possibletoken == "=")
+        else if (possibletoken == "," ||  possibletoken == ";" || possibletoken == ":" || possibletoken == "=>" || possibletoken == "=" || possibletoken == "{" || possibletoken == "}")
         {
             token = new Token(Token.Type.symbol, possibletoken);
             

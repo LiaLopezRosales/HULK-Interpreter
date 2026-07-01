@@ -34,9 +34,9 @@ public class TokenStream:IEnumerable<Token>
 
     public void MoveBackward(int i)
     {
-        if ( position-i >= tokens.Count-1)
+        if (position - i >= 0)
         {
-            position-=i;
+            position -= i;
         }
     }
     public void MoveTo(int i)
