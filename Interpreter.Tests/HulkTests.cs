@@ -65,11 +65,11 @@ public class HulkTests
 
     // ─── Strings ──────────────────────────────────────────────
 
-    [Fact] public void String_Concat()            => Assert.Equal("\"a\"\"b\"", Evaluate("\"a\" @ \"b\";"));
-    [Fact] public void String_ConcatNumber()      => Assert.Equal("\"n:\"42", Evaluate("\"n:\" @ 42;"));
-    [Fact] public void String_ConcatBool()        => Assert.Equal("\"b:\"True", Evaluate("\"b:\" @ true;"));
+    [Fact] public void String_Concat()            => Assert.Equal("\"ab\"", Evaluate("\"a\" @ \"b\";"));
+    [Fact] public void String_ConcatNumber()      => Assert.Equal("\"n:42\"", Evaluate("\"n:\" @ 42;"));
+    [Fact] public void String_ConcatBool()        => Assert.Equal("\"b:True\"", Evaluate("\"b:\" @ true;"));
     [Fact] public void String_Empty()             => Assert.Equal("\"\"", Evaluate("\"\";"));
-    [Fact] public void String_ChainedConcat()     => Assert.Equal("\"a\"\" \"\"c\"", Evaluate("\"a\" @ \" \" @ \"c\";"));
+    [Fact] public void String_ChainedConcat()     => Assert.Equal("\"a c\"", Evaluate("\"a\" @ \" \" @ \"c\";"));
 
     // ─── Booleanos ────────────────────────────────────────────
 
@@ -157,7 +157,7 @@ public class HulkTests
     public void Complex_MixedTypes()
     {
         var result = Evaluate("let x = 42 in \"The answer is \" @ x;");
-        Assert.Equal("\"The answer is \"42", result);
+        Assert.Equal("\"The answer is 42\"", result);
     }
 
     [Fact]
@@ -191,4 +191,98 @@ public class HulkTests
 
     [Fact] public void Error_UndeclaredVar()    => AssertError("x;", "variable");
     [Fact] public void Error_StringPlusNum()    => AssertError("\"a\" + 1;", "numerical");
+
+    // ─── Destructive assignment := ────────────────────────────────
+
+    [Fact] public void Assign_Simple()      => Assert.Equal(5.0, Evaluate("let x = 0 in x := 5;"));
+    [Fact] public void Assign_ReturnsVal()  => Assert.Equal(42.0, Evaluate("let x = 0 in (x := 42) + 0;"));
+    [Fact] public void Assign_Chained()     => Assert.Equal(7.0, Evaluate("let x = 0, y = 0 in x := y := 7;"));
+    [Fact] public void Assign_InBlock()     => Assert.Equal(3.0, Evaluate("let x = 0 in { x := 3; x; }"));
+
+    // ─── @@ operator ─────────────────────────────────────────────
+
+    [Fact] public void ConcatDoubleAt_Simple()    => Assert.Equal("\"hello world\"", Evaluate("\"hello\" @@ \"world\";"));
+    [Fact] public void ConcatDoubleAt_Chain()     => Assert.Equal("\"a b c\"", Evaluate("\"a\" @@ \"b\" @@ \"c\";"));
+
+    // ─── range() builtin ─────────────────────────────────────────
+
+    [Fact] public void Range_Simple()     => Assert.Equal(new List<double> { 0, 1, 2 }, Evaluate("range(0, 3);"));
+    [Fact] public void Range_Empty()      => Assert.Equal(new List<double>(), Evaluate("range(0, 0);"));
+
+    // ─── While loop ──────────────────────────────────────────────
+
+    [Fact] public void While_ZeroIter()   => Assert.Null(Evaluate("while (false) 42;"));
+    [Fact] public void While_CountUp()    => Assert.Equal(3.0, Evaluate("let i = 0 in while (i < 3) i := i + 1;"));
+    [Fact] public void While_NeverBody()  => Assert.Null(Evaluate("while (false) 42;"));
+    [Fact] public void While_BlockBody()  => Assert.Equal(9.0, Evaluate("let x = 0 in while (x < 9) { x := x + 1; x := x + 1; x := x - 1; }"));
+
+    // ─── For loop ────────────────────────────────────────────────
+
+    [Fact] public void For_Simple()       => Assert.Equal(3.0, Evaluate("let s = 0 in for (x in range(0, 3)) s := s + x;"));
+    [Fact] public void For_Empty()        => Assert.Null(Evaluate("for (x in range(0, 0)) 42;"));
+
+    // ─── Expression blocks { } ───────────────────────────────────
+
+    [Fact] public void Block_Simple()     => Assert.Equal(3.0, Evaluate("{ 1; 2; 3; }"));
+    [Fact] public void Block_Single()     => Assert.Equal(42.0, Evaluate("{ 42; }"));
+    [Fact] public void Block_Nested()     => Assert.Equal(5.0, Evaluate("{ { 1; 2; } 5; }"));
+
+    // ─── Comments ────────────────────────────────────────────────
+
+    [Fact] public void Comment_End()      => Assert.Equal(5.0, Evaluate("2 + 3; // suma"));
+    [Fact] public void Comment_Only()     => Assert.Equal(5.0, Evaluate("// solo comentario\n5;"));
+    [Fact] public void Comment_MidExpr()  => Assert.Equal(42.0, Evaluate("42 // el sentido\n;"));
+
+    // ─── Multiline via ; separator ───────────────────────────────
+
+    [Fact] public void MultiStmt_LastVal() => Assert.Equal(3.0, Evaluate("1; 2; 3;"));
+    [Fact] public void MultiStmt_FuncThenCall() => Assert.Equal(6.0, Evaluate("function f(x) => x + 1; f(5);"));
+
+    // ─── Short-circuit ────────────────────────────────────────────
+
+    [Fact] public void ShortCircuit_And() => Assert.Equal(false, Evaluate("false & (1/0 == 0);"));
+    [Fact] public void ShortCircuit_Or()  => Assert.Equal(true, Evaluate("true | (1/0 == 0);"));
+
+    // ─── Type mismatch en booleanos ───────────────────────────────
+
+    [Fact] public void Error_BoolAndNum() => AssertError("1 & true;", "boolean");
+    [Fact] public void Error_BoolOrNum()  => AssertError("\"a\" | false;", "boolean");
+    [Fact] public void Error_NotNum()     => AssertError("!42;", "boolean");
+
+    // ─── Unary minus para expresiones ─────────────────────────────
+
+    [Fact] public void UnaryMinus_Parens() => Assert.Equal(-5.0, Evaluate("-(2+3);"));
+    [Fact] public void UnaryMinus_Chain()  => Assert.Equal(25.0, Evaluate("-(2+3)^2;"));
+    [Fact] public void UnaryMinus_Nested() => Assert.Equal(8.0, Evaluate("-( -(2+3) ) + 3;"));
+
+    // ─── elif chains ──────────────────────────────────────────────
+
+    [Fact] public void If_Elif_Else()     => Assert.Equal(2.0, Evaluate("if (false) 1 elif (true) 2 else 3;"));
+    [Fact] public void If_Elif_False()    => Assert.Equal(3.0, Evaluate("if (false) 1 elif (false) 2 else 3;"));
+    [Fact] public void If_Elif_Chain()    => Assert.Equal(3.0, Evaluate("if (false) 1 elif (false) 2 elif (true) 3 else 4;"));
+
+    // ─── For con string ───────────────────────────────────────────
+
+    [Fact] public void For_String() => Assert.Equal(3.0, Evaluate("let n = 0 in for (c in \"A\") n := n + 1;"));
+
+    // ─── range() edge cases ───────────────────────────────────────
+
+    [Fact] public void Range_StartGtEnd() => Assert.Equal(new List<double>(), Evaluate("range(5, 0);"));
+
+    // ─── Mod by zero ──────────────────────────────────────────────
+
+    [Fact] public void Error_ModByZero() => AssertError("5 % 0;", "divide by zero");
+
+    // ─── Assignment errors ────────────────────────────────────────
+
+    [Fact] public void Error_AssignUndeclared() => AssertError("x := 5;", "not declared");
+
+    // ─── Function errors ──────────────────────────────────────────
+
+    [Fact] public void Error_FuncRedef()    => AssertError("function f(x) => x; function f(y) => y;", "already exists");
+    [Fact] public void Error_FuncArgCount() => AssertError("function f(x) => x; f(1,2);", "parameters");
+
+    // ─── Function body with := ────────────────────────────────────
+
+    [Fact] public void FuncBody_Assign() => Assert.Equal(5.0, Evaluate("function f(x) => x := 5; f(0);"));
 }
