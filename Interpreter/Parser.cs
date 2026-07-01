@@ -16,7 +16,16 @@ public class Parser
 
     public Expression Parse()
     {
-        return ParseExpression();
+        List<Expression> exprs = new List<Expression>();
+        exprs.Add(ParseExpression());
+        while (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Value == ";")
+        {
+            tokenstream.MoveForward(1);
+            if (tokenstream.Position() < tokens.Count &&
+                tokens[tokenstream.Position()].Tipo != Token.Type.EOL)
+                exprs.Add(ParseExpression());
+        }
+        return exprs.Count == 1 ? exprs[0] : new BlockExpression(exprs);
     }
 
     public List<Error> Syntactic_Errors()
@@ -26,25 +35,38 @@ public class Parser
 
     public Expression ParseExpression()
     {
+        Expression left;
+
         if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Tipo == Token.Type.print)
             return Print();
-
         if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Value == "let")
             return Let_In();
-
         if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Value == "if")
             return IF_ElSE();
-
         if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Value == "function")
             return Function();
-
         if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Value == "while")
             return While();
-
         if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Tipo == Token.Type.symbol && tokens[tokenstream.Position()].Value == "{")
             return Block();
 
-        return ParseOP();
+        left = ParseOP();
+
+        if (tokenstream.Position() < tokens.Count && tokens[tokenstream.Position()].Tipo == Token.Type.assign)
+        {
+            if (left is VariableExpression varExpr)
+            {
+                tokenstream.MoveForward(1);
+                Expression right = ParseExpression();
+                return new AssignmentExpression(varExpr.Name, right);
+            }
+            else
+            {
+                errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Invalid, "asignación inválida"));
+            }
+        }
+
+        return left;
     }
 
     public Expression Print()
@@ -179,9 +201,12 @@ public class Parser
         tokenstream.MoveForward(1);
         List<Expression> expressions = new List<Expression>();
 
-        while (tokenstream.Position() < tokens.Count && !(tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.symbol && tokenstream.tokens[tokenstream.Position()].Value == "}"))
+        while (tokenstream.Position() < tokens.Count &&
+               tokens[tokenstream.Position()].Tipo != Token.Type.EOL &&
+               !(tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.symbol && tokenstream.tokens[tokenstream.Position()].Value == "}"))
         {
-            expressions.Add(ParseExpression());
+            Expression e = ParseExpression();
+            expressions.Add(e);
             if (tokenstream.Position() < tokens.Count && tokenstream.tokens[tokenstream.Position()].Value == ";")
                 tokenstream.MoveForward(1);
         }
@@ -319,6 +344,20 @@ public class Parser
             return new BuiltinCall("rand", new List<Expression>());
         }
 
+        if (tokenstream.tokens[tokenstream.Position()].Value == "range")
+        {
+            tokenstream.MoveForward(1);
+            ExpectAndAdvance(Token.Type.left_bracket, "'(' symbol");
+            Expression start = ParseExpression();
+            if (tokenstream.Position() >= tokenstream.tokens.Count || tokenstream.tokens[tokenstream.Position()].Value != ",")
+                errors.Add(new Error(Error.TypeError.Syntactic_Error, Error.ErrorCode.Expected, "',' symbol"));
+            else
+                tokenstream.MoveForward(1);
+            Expression end = ParseExpression();
+            ExpectAndAdvance(Token.Type.right_bracket, "')' symbol");
+            return new BuiltinCall("range", new List<Expression> { start, end });
+        }
+
         if (tokenstream.tokens[tokenstream.Position()].Tipo == Token.Type.boolean)
         {
             bool value = tokenstream.tokens[tokenstream.Position()].Value == "true";
@@ -389,13 +428,12 @@ public class Parser
                 List<Expression> args = new List<Expression>();
                 if (tokenstream.Position() < tokens.Count && tokenstream.tokens[tokenstream.Position()].Tipo != Token.Type.right_bracket)
                 {
-                    do
+                    args.Add(ParseExpression());
+                    while (tokenstream.Position() < tokens.Count && tokenstream.tokens[tokenstream.Position()].Value == ",")
                     {
+                        tokenstream.MoveForward(1);
                         args.Add(ParseExpression());
-                        if (tokenstream.Position() < tokens.Count && tokenstream.tokens[tokenstream.Position()].Value == ",")
-                            tokenstream.MoveForward(1);
-                    } while (tokenstream.Position() > 0 && tokenstream.Position() < tokens.Count &&
-                             tokenstream.tokens[Math.Min(tokenstream.Position(), tokens.Count - 1)].Value == ",");
+                    }
                 }
 
                 if (tokenstream.Position() >= tokens.Count || tokenstream.tokens[tokenstream.Position()].Tipo != Token.Type.right_bracket)
@@ -448,7 +486,7 @@ public class Parser
         {
             Token.Type op = tokenstream.tokens[tokenstream.Position()].Tipo;
             tokenstream.MoveForward(1);
-            Expression right = ParseMul_O_Div();
+            Expression right = ParsePower();
 
             left = op switch
             {
@@ -469,7 +507,7 @@ public class Parser
         {
             Token.Type op = tokenstream.tokens[tokenstream.Position()].Tipo;
             tokenstream.MoveForward(1);
-            Expression right = ParseSum_O_Sub();
+            Expression right = ParseMul_O_Div();
 
             left = op == Token.Type.sum ? new Sum(left, right) : new Subtraction(left, right);
         }
@@ -504,30 +542,46 @@ public class Parser
         return left;
     }
 
-    public Expression ParseOr_O_And()
+    public Expression ParseAnd()
     {
         Expression left = ParseComparation();
         while (tokenstream.Position() < tokenstream.tokens.Count &&
-               (tokenstream.tokens[tokenstream.Position()].Value == "|" ||
-                tokenstream.tokens[tokenstream.Position()].Value == "&"))
+               tokenstream.tokens[tokenstream.Position()].Value == "&")
         {
-            Token.Type op = tokenstream.tokens[tokenstream.Position()].Tipo;
             tokenstream.MoveForward(1);
-            Expression right = ParseOr_O_And();
+            Expression right = ParseComparation();
+            left = new And(left, right);
+        }
+        return left;
+    }
 
-            left = op == Token.Type.Or ? new Or(left, right) : new And(left, right);
+    public Expression ParseOr()
+    {
+        Expression left = ParseAnd();
+        while (tokenstream.Position() < tokenstream.tokens.Count &&
+               tokenstream.tokens[tokenstream.Position()].Value == "|")
+        {
+            tokenstream.MoveForward(1);
+            Expression right = ParseAnd();
+            left = new Or(left, right);
         }
         return left;
     }
 
     public Expression ParseOP()
     {
-        Expression left = ParseOr_O_And();
-        while (tokenstream.Position() < tokenstream.tokens.Count && tokenstream.tokens[tokenstream.Position()].Value == "@")
+        Expression left = ParseOr();
+        while (tokenstream.Position() < tokenstream.tokens.Count &&
+               (tokenstream.tokens[tokenstream.Position()].Value == "@" ||
+                tokenstream.tokens[tokenstream.Position()].Value == "@@"))
         {
+            string op = tokenstream.tokens[tokenstream.Position()].Value;
             tokenstream.MoveForward(1);
-            Expression right = ParseOP();
-            left = new Concatenation(left, right);
+            Expression right = ParseOr();
+            if (op == "@@")
+                left = new Concatenation(new Concatenation(left, new LiteralExpression(" ")), right);
+            else
+                left = new Concatenation(left, right);
         }
         return left;
     }

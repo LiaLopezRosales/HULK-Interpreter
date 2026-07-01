@@ -26,6 +26,16 @@ public class BuiltinCall : Expression
                     Convert.ToDouble(Arguments[0].Evaluate(scope, context, errors), CultureInfo.InvariantCulture),
                     Convert.ToDouble(Arguments[1].Evaluate(scope, context, errors), CultureInfo.InvariantCulture));
 
+            case "range":
+                {
+                    double start = Convert.ToDouble(Arguments[0].Evaluate(scope, context, errors), CultureInfo.InvariantCulture);
+                    double end = Convert.ToDouble(Arguments[1].Evaluate(scope, context, errors), CultureInfo.InvariantCulture);
+                    List<double> result = new List<double>();
+                    for (double i = start; i < end; i++)
+                        result.Add(i);
+                    return result;
+                }
+
             case "rand":
                 return context.Math_value["rand"]();
 
